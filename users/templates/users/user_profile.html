@@ -1,0 +1,138 @@
+﻿{% extends 'base.html' %}
+
+{% block title %}Perfil de {{ user.username }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>{{ user.first_name }} {{ user.last_name }} <small class="text-muted">(@{{ user.username }})</small></h2>
+    <p>Email: {{ user.email }}</p>
+
+    {% if editing_avatar %}
+    <form method="post" enctype="multipart/form-data" class="mb-3">
+        {% csrf_token %}
+        <input type="file" name="avatar" accept="image/*" required class="form-control mb-2">
+        <button type="submit" class="btn btn-primary">Guardar Avatar</button>
+    </form>
+    {% else %}
+    {% if user.profile.avatar %}
+    <img src="{{ user.profile.avatar.url }}" class="img-thumbnail mb-2" width="100">
+    {% else %}
+    <p>No avatar yet</p>
+    {% endif %}
+    <a href="?edit=avatar" class="btn btn-outline-secondary btn-sm mb-2">Editar Avatar</a>
+    {% endif %}
+
+    {% if editing_bio %}
+    <form method="post">
+        {% csrf_token %}
+        <textarea name="bio" class="form-control mb-2" rows="3">{{ user.profile.bio }}</textarea>
+        <button type="submit" class="btn btn-primary">Guardar BIO</button>
+    </form>
+    {% else %}
+    <p>{{ user.profile.bio }}</p>
+    <a href="?edit=bio" class="btn btn-outline-secondary btn-sm">Editar BIO</a>
+    {% endif %}
+
+    <hr>
+
+    <div class="row text-center my-4">
+        <div class="col">
+            <h4>{{ open_issues|length }}</h4>
+            <p class="text-muted">Open Assigned Issues</p>
+        </div>
+        <div class="col">
+            <h4>{{ watched_issues|length }}</h4>
+            <p class="text-muted">Watched Issues</p>
+        </div>
+        <div class="col">
+            <h4>{{ comments|length }}</h4>
+            <p class="text-muted">Comments</p>
+        </div>
+    </div>
+
+    <ul class="nav nav-tabs mb-3" id="profileTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" id="assigned-tab" data-bs-toggle="tab" href="#assigned" role="tab">Assigned</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" id="watched-tab" data-bs-toggle="tab" href="#watched" role="tab">Watched</a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" id="comments-tab" data-bs-toggle="tab" href="#comments" role="tab">Comments</a>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="profileTabsContent">
+        <div class="tab-pane fade show active" id="assigned" role="tabpanel">
+            <h4>Open Assigned Issues</h4>
+
+            <p>
+                Ordenar por:
+                <a href="?sort=tipo">Tipo</a> |
+                <a href="?sort=severidad">Severidad</a> |
+                <a href="?sort=id">ID</a> |
+                <a href="?sort=estado">Estado</a> |
+                <a href="?sort=last_modified">Fecha modificación</a> |
+                <a href="?sort=deadline">Fecha límite</a>
+            </p>
+
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Subject</th>
+                            <th>Tipo</th>
+                            <th>Severidad</th>
+                            <th>Estado</th>
+                            <th>Modified</th>
+                            <th>Deadline</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for issue in open_issues %}
+                        <tr>
+                            <td>{{ issue.id }}</td>
+                            <td>{{ issue.subject }}</td>
+                            <td>{{ issue.tipo }}</td>
+                            <td>{{ issue.severidad }}</td>
+                            <td>{{ issue.estado }}</td>
+                            <td>{{ issue.last_modified|date:"Y-m-d H:i" }}</td>
+                            <td>{{ issue.deadline|date:"Y-m-d" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="7">No open issues</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="watched" role="tabpanel">
+            <h4>Watched Issues</h4>
+            <ul class="list-group">
+                {% for issue in watched_issues %}
+                <li class="list-group-item">
+                    #{{ issue.id }} - {{ issue.subject }} ({{ issue.estado }})
+                </li>
+                {% empty %}
+                <li class="list-group-item text-muted">No watched issues</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="tab-pane fade" id="comments" role="tabpanel">
+            <h4>Comments</h4>
+            <ul class="list-group">
+                {% for comment in comments %}
+                <li class="list-group-item">
+                    <strong>Issue #{{ comment.issue_id.id }}:</strong> {{ comment.text }}
+                </li>
+                {% empty %}
+                <li class="list-group-item text-muted">No comments</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

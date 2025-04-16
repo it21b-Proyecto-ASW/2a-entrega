@@ -1,0 +1,34 @@
+{% extends 'issues/base.html' %}
+
+{% block title %}{% if issue %}Editar Issue{% else %}Nueva Issue{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>{% if issue %}Editar Issue{% else %}Nueva Issue{% endif %}</h1>
+    
+    <form method="POST">
+        {% csrf_token %}
+        {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field.errors }}
+                {% if field.field.widget.input_type == 'checkbox' %}
+                    <div class="checkbox">
+                        {{ field }}
+                    </div>
+                {% else %}
+                    {{ field|add_class:"form-control" }}
+                {% endif %}
+                {% if field.help_text %}
+                    <small class="form-text text-muted">{{ field.help_text }}</small>
+                {% endif %}
+            </div>
+        {% endfor %}
+        
+        <div style="margin-top: 20px;">
+            <button type="submit" class="button">{% if issue %}Guardar Cambios{% else %}Crear Issue{% endif %}</button>
+            <a href="{% url 'issues' %}" class="button" style="background-color: #6c757d;">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %} 

@@ -1,0 +1,133 @@
+{% extends 'issues/base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Nueva Issue{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 800px; margin: 2rem auto;">
+    <h1 style="color: #333; margin-bottom: 1.5rem;">Crear Nueva Issue</h1>
+    
+    <form method="POST" style="display: grid; gap: 1.5rem;">
+        {% csrf_token %}
+        
+        <div style="display: grid; grid-template-columns: 1fr; gap: 1rem;">
+            <div class="form-group">
+                <label for="{{ form.subject.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Título</label>
+                {{ form.subject.errors }}
+                {{ form.subject|add_class:"form-control" }}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.description.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Descripción</label>
+            {{ form.description.errors }}
+            {{ form.description|add_class:"form-control"|attr:"style:min-height:120px;" }}
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <div class="form-group">
+                <label for="{{ form.tipo.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Tipo</label>
+                {{ form.tipo.errors }}
+                {{ form.tipo|add_class:"form-control" }}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.severidad.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Severidad</label>
+                {{ form.severidad.errors }}
+                {{ form.severidad|add_class:"form-control" }}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.prioridad.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Prioridad</label>
+                {{ form.prioridad.errors }}
+                {{ form.prioridad|add_class:"form-control" }}
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <div class="form-group">
+                <label for="{{ form.estado.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Estado</label>
+                {{ form.estado.errors }}
+                {{ form.estado|add_class:"form-control" }}
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.deadline.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Fecha límite</label>
+                {{ form.deadline.errors }}
+                {{ form.deadline|add_class:"form-control" }}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.users_assigned.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Usuarios Asignados</label>
+            {{ form.users_assigned.errors }}
+            {{ form.users_assigned|add_class:"form-control" }}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.watchers.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Watchers</label>
+            {{ form.watchers.errors }}
+            {{ form.watchers|add_class:"form-control" }}
+        </div>
+
+        <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #eee; display: flex; gap: 1rem; justify-content: flex-end;">
+            <button type="submit" class="button" style="background-color: #007bff;">Crear Issue</button>
+            <a href="{% url 'issues' %}" class="button" style="background-color: #6c757d;">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+<style>
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        transition: border-color 0.2s ease;
+    }
+
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+        outline: none;
+    }
+
+    .errorlist {
+        color: #dc3545;
+        list-style: none;
+        padding: 0;
+        margin: 0.25rem 0;
+        font-size: 0.875rem;
+    }
+
+    /* Estilos para los checkboxes y labels */
+    select[multiple] {
+        padding: 0.15rem !important;
+    }
+
+    select[multiple] label {
+        display: flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+        padding: 0.15rem 0.35rem !important;
+        font-size: 0.8rem !important;
+        min-height: unset !important;
+        height: 1.2rem !important;
+        line-height: 1.2rem !important;
+    }
+
+    select[multiple] input[type="checkbox"] {
+        width: 12px !important;
+        height: 12px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Ajustar el tamaño del contenedor de selección múltiple */
+    select[multiple].form-control {
+        min-height: 40px !important;
+        max-height: 100px !important;
+    }
+</style>
+{% endblock %} 

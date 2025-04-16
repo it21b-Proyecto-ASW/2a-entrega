@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Issue{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="h4">Editar Issue</h2>
+    </div>
+    <div class="card-body">
+        <form method="POST" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.as_p }}
+
+            <div class="mb-3">
+                <label class="form-label fw-bold">Añadir nuevo attachment:</label>
+                {{ attachment_form.file }}
+            </div>
+
+            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+        </form>
+
+        <hr>
+
+        <h5>Attachments existentes:</h5>
+        <ul class="list-unstyled">
+            {% for attachment in issue.attachments.all %}
+            <li><a href="{{ attachment.file.url }}" target="_blank">{{ attachment.file.name }}</a></li>
+            {% empty %}
+            <li class="text-muted">No attachments</li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}

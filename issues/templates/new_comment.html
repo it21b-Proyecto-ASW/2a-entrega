@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block title %}New Comment{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card">
+        <div class="card-header">
+            <h1 class="h3 mb-0">New Comment</h1>
+            <p class="text-muted">Issue: {{ issue.subject }}</p>
+        </div>
+        <div class="card-body">
+            <form method="POST">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="btn btn-primary">Add Comment</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

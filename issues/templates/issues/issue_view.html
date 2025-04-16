@@ -1,0 +1,80 @@
+{% extends 'issues/base.html' %}
+
+{% block title %}{{ issue.subject }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>{{ issue.subject }}</h1>
+    <div class="issue-details">
+        <p><strong>Descripción:</strong> {{ issue.description }}</p>
+        <p><strong>Estado:</strong> {{ issue.estado|default:"No especificado" }}</p>
+        <p><strong>Tipo:</strong> {{ issue.tipo|default:"No especificado" }}</p>
+        <p><strong>Prioridad:</strong> {{ issue.prioridad|default:"No especificada" }}</p>
+        <p><strong>Severidad:</strong> {{ issue.severidad|default:"No especificada" }}</p>
+        <p><strong>Fecha de creación:</strong> {{ issue.creation_date }}</p>
+        <p><strong>Deadline:</strong> {{ issue.deadline|default:"No especificada" }}</p>
+        
+        <div class="card" style="margin-top: 20px;">
+            <h3>Usuarios Asignados</h3>
+            <ul class="list-group">
+                {% for user in issue.users_assigned.all %}
+                    <li class="list-group-item">{{ user.username }}</li>
+                {% empty %}
+                    <li class="list-group-item">No hay usuarios asignados</li>
+                {% endfor %}
+            </ul>
+
+            <h3>Watchers</h3>
+            <ul class="list-group">
+                {% for watcher in issue.watchers.all %}
+                    <li class="list-group-item">{{ watcher.username }}</li>
+                {% empty %}
+                    <li class="list-group-item">No hay watchers</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <a href="{% url 'edit_issue' issue.id %}" class="button">Editar Issue</a>
+            <a href="{% url 'delete_issue' issue.id %}" class="button delete-button">Eliminar Issue</a>
+            <a href="{% url 'issues' %}" class="button" style="background-color: #6c757d;">Volver a la lista</a>
+        </div>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 20px;">
+    <h2>Comentarios</h2>
+    {% for comment in comments %}
+        <div class="list-group-item">
+            <div class="comment-header">
+                <strong>{{ comment.author }}</strong>
+                <span>{{ comment.created_at|date:"d/m/Y H:i" }}</span>
+            </div>
+            <p>{{ comment.text }}</p>
+            {% if user.is_authenticated %}
+                <form action="{% url 'delete_comment' comment.id %}" method="POST" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="button delete-button">Eliminar</button>
+                </form>
+            {% endif %}
+        </div>
+    {% empty %}
+        <p>No hay comentarios todavía.</p>
+    {% endfor %}
+
+    {% if user.is_authenticated %}
+        <div class="comment-form" style="margin-top: 20px;">
+            <h3>Añadir comentario</h3>
+            <form method="POST" action="{% url 'issue_view' issue.id %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <textarea name="comment_text" class="form-control" rows="4" placeholder="Escribe tu comentario aquí..." required></textarea>
+                </div>
+                <button type="submit" class="button">Enviar comentario</button>
+            </form>
+        </div>
+    {% else %}
+        <p>Debes <a href="{% url 'account_login' %}">iniciar sesión</a> para poder comentar.</p>
+    {% endif %}
+</div>
+{% endblock %} 

@@ -1,0 +1,30 @@
+{% extends 'issues/base.html' %}
+
+{% block title %}Lista de Issues{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Issues</h1>
+    <a href="{% url 'new_issue' %}" class="button">Crear Nueva Issue</a>
+    
+    <div class="list-group">
+        {% for issue in issues %}
+            <div class="list-group-item">
+                <h3><a href="{% url 'issue_view' issue.id %}">{{ issue.subject }}</a></h3>
+                <p>{{ issue.description|truncatewords:30 }}</p>
+                <div>
+                    <strong>Estado:</strong> {{ issue.estado|default:"No especificado" }}
+                    <strong>Tipo:</strong> {{ issue.tipo|default:"No especificado" }}
+                    <strong>Prioridad:</strong> {{ issue.prioridad|default:"No especificada" }}
+                </div>
+                <div style="margin-top: 10px;">
+                    <a href="{% url 'edit_issue' issue.id %}" class="button">Editar</a>
+                    <a href="{% url 'delete_issue' issue.id %}" class="button delete-button">Eliminar</a>
+                </div>
+            </div>
+        {% empty %}
+            <p>No hay issues disponibles.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 

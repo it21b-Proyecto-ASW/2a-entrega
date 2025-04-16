@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}Issue Details{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="card mb-4">
+        <div class="card-header">
+            <h1 class="h3 mb-0">Issue Details</h1>
+        </div>
+        <div class="card-body">
+            <dl class="row">
+                <dt class="col-sm-3">Subject</dt>
+                <dd class="col-sm-9">{{ issue.subject }}</dd>
+
+                <dt class="col-sm-3">Description</dt>
+                <dd class="col-sm-9">{{ issue.description }}</dd>
+
+                <dt class="col-sm-3">Created At</dt>
+                <dd class="col-sm-9">{{ issue.creation_date }}</dd>
+
+                <dt class="col-sm-3">Type</dt>
+                <dd class="col-sm-9">{{ issue.tipo }}</dd>
+
+                <dt class="col-sm-3">Status</dt>
+                <dd class="col-sm-9">{{ issue.estado }}</dd>
+
+                <dt class="col-sm-3">Priority</dt>
+                <dd class="col-sm-9">{{ issue.prioridad }}</dd>
+
+                <dt class="col-sm-3">Severity</dt>
+                <dd class="col-sm-9">{{ issue.severidad }}</dd>
+
+                <dt class="col-sm-3">Assigned Users</dt>
+                <dd class="col-sm-9">
+                    <ul class="mb-0">
+                        {% for user in issue.user_assigned.all %}
+                            <li>{{ user.username }}</li>
+                        {% empty %}
+                            <li>No hay usuarios asignados</li>
+                        {% endfor %}
+                    </ul>
+                </dd>
+
+                <dt class="col-sm-3">Watchers</dt>
+                <dd class="col-sm-9">
+                    <ul class="mb-0">
+                        {% for watcher in issue.watchers.all %}
+                            <li>{{ watcher.username }}</li>
+                        {% empty %}
+                            <li>No hay watchers</li>
+                        {% endfor %}
+                    </ul>
+                </dd>
+
+                <dt class="col-sm-3">Deadline</dt>
+                <dd class="col-sm-9">{{ issue.deadline }}</dd>
+
+                <dt class="col-sm-3">Attachments</dt>
+                <dd class="col-sm-9">
+                    <ul class="mb-0">
+                        {% for attachment in issue.attachments.all %}
+                            <li>
+                                <a href="{{ attachment.file.url }}" target="_blank">
+                                    {{ attachment.file.name }}
+                                </a>
+                            </li>
+                        {% empty %}
+                            <li>No attachments</li>
+                        {% endfor %}
+                    </ul>
+                </dd>
+            </dl>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-start mb-4">
+                <a href="{% url 'edit_issue' issue.pk %}" class="btn btn-primary me-md-2">Edit</a>
+                <a href="{% url 'delete_issue' issue.pk %}" class="btn btn-danger me-md-2">Delete</a>
+                <a href="{% url 'new_comment' issue.pk %}" class="btn btn-secondary">New Comment</a>
+            </div>
+
+            <h2 class="h4 mb-3">Comments</h2>
+            <div class="list-group">
+                {% for comment in issue.comment_set.all %}
+                    <div class="comment-box mb-2 p-2 border rounded bg-light">
+                        <p><strong>{{ comment.author }}</strong> dijo:</p>
+                        <p>{{ comment.text }}</p>
+                        <small class="text-muted">{{ comment.created_at|date:"F j, Y, g:i a" }}</small>
+                    </div>
+                {% empty %}
+                    <div class="list-group-item">
+                        <p class="mb-0">No comments yet.</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,18 @@
+﻿{% extends 'base.html' %}
+
+{% block title %}User List{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Usuarios (sin superusuario)</h1>
+    <div class="list-group">
+        {% for user in users %}
+        <a href="{% url 'user_profile' user.id %}" class="list-group-item list-group-item-action">
+            {{ user.username }}
+        </a>
+        {% empty %}
+        <div class="alert alert-warning">No hay usuarios disponibles.</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
