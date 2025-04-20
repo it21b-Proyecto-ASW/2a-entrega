@@ -194,13 +194,54 @@
                 const usersList = document.getElementById('users-list');
                 usersList.innerHTML = '';
 
-                usersSnapshot.forEach(doc => {
-                    const user = doc.data();
-                    const userCard = createUserCard(user);
+                for (const userDoc of usersSnapshot.docs) {
+                    const userData = userDoc.data();
+                    const userId = userDoc.id;
+
+                    // Comptar issues i obtenir email
+                    const issuesSnapshot = await db.collection('issues')
+                        .where('userId', '==', userId)
+                        .get();
+                    const issuesCount = issuesSnapshot.size;
+                    
+                    // Intentar obtenir l'email de les issues
+                    if (issuesSnapshot.size > 0) {
+                        const firstIssue = issuesSnapshot.docs[0].data();
+                        if (firstIssue.userEmail) {
+                            userData.email = firstIssue.userEmail;
+                        }
+                    }
+
+                    // Comptar comentaris i obtenir email si no s'ha trobat
+                    let commentsCount = 0;
+                    const issues = await db.collection('issues').get();
+                    for (const issue of issues.docs) {
+                        const commentsSnapshot = await db.collection('issues')
+                            .doc(issue.id)
+                            .collection('comments')
+                            .where('userId', '==', userId)
+                            .get();
+                        commentsCount += commentsSnapshot.size;
+
+                        // Si encara no tenim email, intentar obtenir-lo del primer comentari
+                        if (!userData.email && commentsSnapshot.size > 0) {
+                            const firstComment = commentsSnapshot.docs[0].data();
+                            if (firstComment.userEmail) {
+                                userData.email = firstComment.userEmail;
+                            }
+                        }
+                    }
+
+                    // Afegir els comptadors a les dades de l'usuari
+                    userData.issuesCount = issuesCount;
+                    userData.commentsCount = commentsCount;
+
+                    const userCard = createUserCard(userData);
                     usersList.appendChild(userCard);
-                });
+                }
             } catch (error) {
                 console.error('Error carregant usuaris:', error);
+                showError('Error carregant els usuaris');
             }
         }
 

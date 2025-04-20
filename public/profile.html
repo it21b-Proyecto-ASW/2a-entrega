@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Perfil - Issue Tracker</title>
-    <link rel="stylesheet" href="/styles.css">
     <!-- Firebase App -->
     <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
     <!-- Firebase Auth -->
@@ -217,7 +216,7 @@
     </style>
 </head>
 <body>
-    <div id="navbar-container"></div>
+    <div id="navbar"></div>
     <div class="container">
         <div class="profile-header">
             <div class="avatar-container">
@@ -254,27 +253,17 @@
                 <div class="stat-value" id="comments-count">0</div>
                 <div class="stat-label">Comentaris</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-value" id="activity-count">0</div>
-                <div class="stat-label">Dies actiu</div>
-            </div>
         </div>
     </div>
 
-    <script src="/navbar.js"></script>
     <script>
         // Carregar la navbar
-        window.addEventListener('load', () => {
-            fetch('/navbar.html')
-                .then(response => response.text())
-                .then(html => {
-                    document.getElementById('navbar-container').innerHTML = html;
-                })
-                .catch(error => console.error('Error carregant la navbar:', error));
-
-            // Inicialitzar Firebase
-            initializeFirebase();
-        });
+        fetch('/navbar.html')
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('navbar').innerHTML = html;
+            })
+            .catch(error => console.error('Error carregant la navbar:', error));
 
         // Inicialitzar Firebase
         let app;
@@ -297,9 +286,7 @@
 
                 // Comprovar si l'usuari està autenticat
                 auth.onAuthStateChanged(user => {
-                    if (!user) {
-                        window.location.href = '/auth.html';
-                    } else {
+                    if (user) {
                         loadUserProfile(user);
                     }
                 });
@@ -337,7 +324,8 @@
                 }
 
                 // Carregar estadístiques
-                loadUserStats(user.uid);
+                await loadUserStats(user.uid);
+
             } catch (error) {
                 console.error('Error carregant el perfil:', error);
                 showError('Error carregant el perfil');
@@ -351,24 +339,26 @@
                 const issuesSnapshot = await db.collection('issues')
                     .where('userId', '==', userId)
                     .get();
-                document.getElementById('issues-count').textContent = issuesSnapshot.size;
+                const issuesCount = issuesSnapshot.size;
+                document.getElementById('issues-count').textContent = issuesCount;
 
                 // Comptar comentaris
-                const commentsSnapshot = await db.collection('comments')
-                    .where('userId', '==', userId)
-                    .get();
-                document.getElementById('comments-count').textContent = commentsSnapshot.size;
-
-                // Calcular dies actiu
-                const userDoc = await db.collection('users').doc(userId).get();
-                if (userDoc.exists) {
-                    const userData = userDoc.data();
-                    const joinDate = userData.joinDate?.toDate() || new Date();
-                    const daysActive = Math.floor((new Date() - joinDate) / (1000 * 60 * 60 * 24));
-                    document.getElementById('activity-count').textContent = daysActive;
+                let totalComments = 0;
+                const issues = await db.collection('issues').get();
+                for (const issue of issues.docs) {
+                    const commentsSnapshot = await db.collection('issues')
+                        .doc(issue.id)
+                        .collection('comments')
+                        .where('userId', '==', userId)
+                        .get();
+                    totalComments += commentsSnapshot.size;
                 }
+                // Assegurar que el nombre de comentaris no sigui negatiu
+                document.getElementById('comments-count').textContent = Math.max(0, totalComments);
             } catch (error) {
                 console.error('Error carregant estadístiques:', error);
+                // En cas d'error, mostrar 0 en lloc de -1
+                document.getElementById('comments-count').textContent = '0';
             }
         }
 

@@ -297,6 +297,32 @@
         let db;
         let storage;
         
+        async function initializeFirebase() {
+            try {
+                if (!app) {
+                    app = firebase.initializeApp(firebaseConfig);
+                }
+
+                if (!auth) {
+                    auth = firebase.auth();
+                }
+
+                if (!db) {
+                    db = firebase.firestore();
+                }
+
+                if (!storage) {
+                    storage = firebase.storage();
+                }
+
+                // Carregar issues
+                loadIssues();
+            } catch (error) {
+                console.error('Error inicialitzant Firebase:', error);
+                showError('Error inicialitzant l\'aplicació');
+            }
+        }
+
         // Funció per crear issues d'exemple
         async function createSampleIssues() {
             const sampleIssues = [
@@ -364,8 +390,6 @@
                 console.error('Error creant issues d\'exemple:', error);
             }
         }
-
-        
 
         // Carregar issues
         async function loadIssues() {
@@ -737,76 +761,37 @@
         // Afegir comentari
         async function addComment(issueId) {
             try {
-                const user = auth.currentUser;
-                if (!user) {
-                    showError('Has d\'estar autenticat per afegir comentaris');
-                    return;
-                }
-
                 const commentText = document.getElementById(`new-comment-${issueId}`).value.trim();
                 if (!commentText) {
                     showError('El comentari no pot estar buit');
                     return;
                 }
 
-                // Obtenir el nom de l'usuari
-                const userProfile = await db.collection('profiles').doc(user.uid).get();
-                const userData = userProfile.data();
+                if (!auth.currentUser) {
+                    showError('No estàs autenticat');
+                    return;
+                }
 
-                // Crear el comentari a la subcol·lecció de l'issue
-                const commentRef = await db.collection('issues').doc(issueId).collection('comments').add({
+                const comment = {
                     text: commentText,
-                    authorId: user.uid,
-                    authorName: userData.displayName || user.email,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    issueId: issueId
-                });
+                    userId: auth.currentUser.uid,
+                    userEmail: auth.currentUser.email,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                };
 
-                // Crear el mateix comentari a la col·lecció global de comentaris
-                await db.collection('comments').add({
-                    text: commentText,
-                    authorId: user.uid,
-                    authorName: userData.displayName || user.email,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    issueId: issueId
-                });
-
-                // Incrementar el comptador de comentaris de l'usuari
-                await db.collection('profiles').doc(user.uid).update({
-                    commentsCount: firebase.firestore.FieldValue.increment(1)
-                });
+                // Afegir el comentari a la subcol·lecció de l'issue
+                await db.collection('issues').doc(issueId).collection('comments').add(comment);
 
                 // Netejar el camp de text
                 document.getElementById(`new-comment-${issueId}`).value = '';
 
                 // Actualitzar la llista de comentaris
-                const comment = {
-                    id: commentRef.id,
-                    text: commentText,
-                    authorName: userData.displayName || user.email,
-                    createdAt: new Date()
-                };
+                loadIssues();
 
-                const commentsList = document.getElementById(`comments-list-${issueId}`);
-                const commentElement = document.createElement('div');
-                commentElement.className = 'comment';
-                commentElement.id = `comment-${comment.id}`;
-                commentElement.innerHTML = `
-                    <div class="comment-header">
-                        <span class="comment-author">${comment.authorName}</span>
-                        <span class="comment-date">${comment.createdAt.toLocaleString()}</span>
-                    </div>
-                    <div class="comment-text">${comment.text}</div>
-                    <div class="comment-actions">
-                        <button class="btn btn-secondary" onclick="deleteComment('${issueId}', '${comment.id}')">Eliminar</button>
-                    </div>
-                `;
-                commentsList.appendChild(commentElement);
-
-                showSuccess('Comentari afegit amb èxit!');
+                showSuccess('Comentari afegit correctament');
             } catch (error) {
                 console.error('Error afegint comentari:', error);
-                showError('Error afegint comentari: ' + error.message);
+                showError('Error afegint el comentari');
             }
         }
 
@@ -881,6 +866,8 @@
                     for (let script of scripts) {
                         eval(script.innerHTML);
                     }
+                    // Inicialitzar Firebase després de carregar la navbar
+                    initializeFirebase();
                 })
                 .catch(error => console.error('Error carregant la navbar:', error));
         });

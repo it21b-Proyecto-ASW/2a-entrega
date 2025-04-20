@@ -88,17 +88,43 @@
         .logout-btn:hover {
             background-color: #c0392b;
         }
+
+        .navbar-item {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+
+        .navbar-item:hover {
+            background-color: #34495e;
+        }
+
+        .new-issue-button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .new-issue-button:hover {
+            background-color: #2980b9;
+        }
     </style>
 </head>
 <body>
     <nav class="navbar">
         <div class="navbar-brand">
-            <a href="/issues.html">Issue Tracker</a>
+            <a href="/">Issue Tracker</a>
         </div>
         <div class="navbar-menu">
-            <a href="/issues.html">Issues</a>
-            <a href="/users.html">Usuaris</a>
-            <a href="/endpoints.html">API Endpoints</a>
+            <a href="issues.html" class="navbar-item">Issues</a>
+            <a href="users.html" class="navbar-item">Usuaris</a>
             <div class="user-info">
                 <a href="/profile.html" id="profile-link"></a>
                 <button class="logout-btn" id="logoutBtn">Tancar Sessió</button>
