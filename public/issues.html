@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issues - Issue Tracker</title>
+    <!-- Firebase App -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <!-- Firebase Auth -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <!-- Firebase Firestore -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
+    <!-- Firebase Storage -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-storage-compat.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            color: #2c3e50;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .issues-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .issues-header h1 {
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        .new-issue-button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .new-issue-button:hover {
+            background-color: #2980b9;
+        }
+
+        .filters {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .filter-group select {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: white;
+        }
+
+        .search-box {
+            flex-grow: 1;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .issues-list {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .issue-card {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .issue-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .issue-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .issue-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .issue-meta {
+            display: flex;
+            gap: 1rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .issue-description {
+            color: #666;
+            margin-bottom: 1rem;
+        }
+
+        .issue-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .issue-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .edit-button {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .delete-button {
+            background-color: #e74c3c;
+            color: white;
+        }
+
+        .badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .badge-bug {
+            background-color: #e74c3c;
+            color: white;
+        }
+
+        .badge-feature {
+            background-color: #2ecc71;
+            color: white;
+        }
+
+        .badge-task {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .badge-low {
+            background-color: #95a5a6;
+            color: white;
+        }
+
+        .badge-medium {
+            background-color: #f39c12;
+            color: white;
+        }
+
+        .badge-high {
+            background-color: #e74c3c;
+            color: white;
+        }
+
+        .badge-critical {
+            background-color: #c0392b;
+            color: white;
+        }
+
+        .badge-open {
+            background-color: #2ecc71;
+            color: white;
+        }
+
+        .badge-in-progress {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .badge-resolved {
+            background-color: #f39c12;
+            color: white;
+        }
+
+        .badge-closed {
+            background-color: #95a5a6;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div id="navbar-container"></div>
+    <div class="container">
+        <div class="issues-header">
+            <h1>Issues</h1>
+            <button class="new-issue-button" onclick="showNewIssueForm()">Nova Issue</button>
+        </div>
+
+        <div class="filters">
+            <div class="filter-group">
+                <label for="type-filter">Tipus:</label>
+                <select id="type-filter" onchange="filterIssues()">
+                    <option value="">Tots</option>
+                    <option value="bug">Bug</option>
+                    <option value="feature">Feature</option>
+                    <option value="task">Task</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="status-filter">Estat:</label>
+                <select id="status-filter" onchange="filterIssues()">
+                    <option value="">Tots</option>
+                    <option value="open">Obert</option>
+                    <option value="in_progress">En Progrés</option>
+                    <option value="resolved">Resolt</option>
+                    <option value="closed">Tancat</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="severity-filter">Severitat:</label>
+                <select id="severity-filter" onchange="filterIssues()">
+                    <option value="">Tots</option>
+                    <option value="low">Baixa</option>
+                    <option value="medium">Mitjana</option>
+                    <option value="high">Alta</option>
+                    <option value="critical">Crítica</option>
+                </select>
+            </div>
+            <input type="text" class="search-box" id="search-box" placeholder="Cercar issues..." oninput="filterIssues()">
+        </div>
+
+        <div class="issues-list" id="issues-list">
+            <!-- Les issues es carregaran aquí dinàmicament -->
+        </div>
+    </div>
+
+    <script>
+        // Configuració de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyBVd3DFu7HL6FKup1y0x711CKBsrZCKWcg",
+            authDomain: "issue-tracker-app-21.firebaseapp.com",
+            projectId: "issue-tracker-app-21",
+            storageBucket: "issue-tracker-app-21.appspot.com",
+            messagingSenderId: "582952539766",
+            appId: "1:582952539766:web:59a2534f4914e394c7f157"
+        };
+
+        // Inicialitzar Firebase
+        let app;
+        let auth;
+        let db;
+        let storage;
+        
+        // Funció per crear issues d'exemple
+        async function createSampleIssues() {
+            const sampleIssues = [
+                {
+                    title: "Error en el login",
+                    description: "El botó d'iniciar sessió no funciona correctament en dispositius mòbils",
+                    type: "bug",
+                    severity: "high",
+                    status: "open",
+                    createdAt: new Date()
+                },
+                {
+                    title: "Implementar autenticació amb Google",
+                    description: "Afegir l'opció d'iniciar sessió amb compte de Google",
+                    type: "feature",
+                    severity: "medium",
+                    status: "in_progress",
+                    createdAt: new Date()
+                },
+                {
+                    title: "Actualitzar documentació",
+                    description: "Actualitzar la documentació de l'API amb els nous endpoints",
+                    type: "task",
+                    severity: "low",
+                    status: "open",
+                    createdAt: new Date()
+                },
+                {
+                    title: "Error crític en la base de dades",
+                    description: "La base de dades no respon en moments de càrrega alta",
+                    type: "bug",
+                    severity: "critical",
+                    status: "open",
+                    createdAt: new Date()
+                },
+                {
+                    title: "Millorar rendiment de la pàgina principal",
+                    description: "Optimitzar les consultes a la base de dades per millorar el temps de càrrega",
+                    type: "task",
+                    severity: "medium",
+                    status: "resolved",
+                    createdAt: new Date()
+                },
+                {
+                    title: "Afegir notificacions push",
+                    description: "Implementar sistema de notificacions push per a usuaris",
+                    type: "feature",
+                    severity: "high",
+                    status: "closed",
+                    createdAt: new Date()
+                }
+            ];
+
+            try {
+                // Verificar si ja hi ha issues
+                const existingIssues = await db.collection('issues').get();
+                if (existingIssues.empty) {
+                    // Crear les issues d'exemple
+                    for (const issue of sampleIssues) {
+                        await db.collection('issues').add(issue);
+                    }
+                    console.log('Issues d\'exemple creades correctament');
+                }
+            } catch (error) {
+                console.error('Error creant issues d\'exemple:', error);
+            }
+        }
+        
+        async function initializeFirebase() {
+            try {
+                if (!app) {
+                    app = firebase.initializeApp(firebaseConfig);
+                }
+
+                if (!auth) {
+                    auth = firebase.auth();
+                }
+
+                if (!db) {
+                    db = firebase.firestore();
+                }
+
+                if (!storage) {
+                    storage = firebase.storage();
+                }
+
+                // Esperar a que l'autenticació estigui llesta
+                const user = await new Promise((resolve, reject) => {
+                    const authTimeout = setTimeout(() => {
+                        reject(new Error('Timeout esperant autenticació'));
+                    }, 10000);
+
+                    const unsubscribe = auth.onAuthStateChanged(user => {
+                        clearTimeout(authTimeout);
+                        unsubscribe();
+                        resolve(user);
+                    });
+                });
+
+                if (!user) {
+                    window.location.href = '/index.html';
+                    return;
+                }
+
+                // Crear issues d'exemple
+                await createSampleIssues();
+                
+                // Carregar issues
+                loadIssues();
+            } catch (error) {
+                console.error('Error inicialitzant Firebase:', error);
+                window.location.href = '/index.html';
+            }
+        }
+
+        // Carregar issues
+        async function loadIssues() {
+            try {
+                const issuesSnapshot = await db.collection('issues').get();
+                const issuesList = document.getElementById('issues-list');
+                issuesList.innerHTML = '';
+
+                issuesSnapshot.forEach(doc => {
+                    const issue = doc.data();
+                    const issueCard = createIssueCard(doc.id, issue);
+                    issuesList.appendChild(issueCard);
+                });
+            } catch (error) {
+                console.error('Error carregant issues:', error);
+            }
+        }
+
+        // Crear card d'issue
+        function createIssueCard(id, issue) {
+            const card = document.createElement('div');
+            card.className = 'issue-card';
+            card.innerHTML = `
+                <div class="issue-header">
+                    <div class="issue-title">${issue.title}</div>
+                    <div class="issue-meta">
+                        <span class="badge badge-${issue.type}">${issue.type}</span>
+                        <span class="badge badge-${issue.severity}">${issue.severity}</span>
+                        <span class="badge badge-${issue.status}">${issue.status}</span>
+                    </div>
+                </div>
+                <div class="issue-description">${issue.description}</div>
+                <div class="issue-footer">
+                    <div class="issue-actions">
+                        <button class="action-button edit-button" onclick="editIssue('${id}')">Editar</button>
+                        <button class="action-button delete-button" onclick="deleteIssue('${id}')">Eliminar</button>
+                    </div>
+                    <div class="issue-date">${new Date(issue.createdAt).toLocaleDateString()}</div>
+                </div>
+            `;
+            return card;
+        }
+
+        // Filtrar issues
+        function filterIssues() {
+            const typeFilter = document.getElementById('type-filter').value;
+            const statusFilter = document.getElementById('status-filter').value;
+            const severityFilter = document.getElementById('severity-filter').value;
+            const searchText = document.getElementById('search-box').value.toLowerCase();
+
+            const issues = document.querySelectorAll('.issue-card');
+            issues.forEach(issue => {
+                // Obtenir els valors dels distintius
+                const typeBadge = issue.querySelector('[class*="badge-"]:not([class*="badge-low"]):not([class*="badge-medium"]):not([class*="badge-high"]):not([class*="badge-critical"]):not([class*="badge-open"]):not([class*="badge-in-progress"]):not([class*="badge-resolved"]):not([class*="badge-closed"])');
+                const severityBadge = issue.querySelector('[class*="badge-low"],[class*="badge-medium"],[class*="badge-high"],[class*="badge-critical"]');
+                const statusBadge = issue.querySelector('[class*="badge-open"],[class*="badge-in-progress"],[class*="badge-resolved"],[class*="badge-closed"]');
+                
+                const type = typeBadge ? typeBadge.textContent : '';
+                const severity = severityBadge ? severityBadge.textContent : '';
+                const status = statusBadge ? statusBadge.textContent : '';
+                const title = issue.querySelector('.issue-title').textContent.toLowerCase();
+                const description = issue.querySelector('.issue-description').textContent.toLowerCase();
+
+                const typeMatch = !typeFilter || type === typeFilter;
+                const statusMatch = !statusFilter || status === statusFilter;
+                const severityMatch = !severityFilter || severity === severityFilter;
+                const searchMatch = !searchText || 
+                    title.includes(searchText) || 
+                    description.includes(searchText);
+
+                issue.style.display = typeMatch && statusMatch && severityMatch && searchMatch ? 'block' : 'none';
+            });
+        }
+
+        // Mostrar formulari de nova issue
+        function showNewIssueForm() {
+            // Implementar formulari de nova issue
+            console.log('Mostrar formulari de nova issue');
+        }
+
+        // Editar issue
+        function editIssue(id) {
+            // Implementar edició d'issue
+            console.log('Editar issue:', id);
+        }
+
+        // Eliminar issue
+        async function deleteIssue(id) {
+            try {
+                await db.collection('issues').doc(id).delete();
+                loadIssues();
+            } catch (error) {
+                console.error('Error eliminant issue:', error);
+            }
+        }
+
+        // Carregar la navbar
+        window.addEventListener('load', () => {
+            fetch('/navbar.html')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('navbar-container').innerHTML = html;
+                    // Carregar els scripts de la navbar
+                    const script = document.createElement('script');
+                    script.src = '/navbar.js';
+                    document.body.appendChild(script);
+                })
+                .catch(error => console.error('Error carregant la navbar:', error));
+
+            // Inicialitzar Firebase
+            initializeFirebase();
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,397 @@
+openapi: 3.0.0
+info:
+  title: Issue Tracker API
+  description: API per gestionar issues, comentaris i attachments
+  version: 1.0.0
+  contact:
+    email: support@issuetracker.com
+
+servers:
+  - url: http://localhost:3000/api
+    description: Servidor de desenvolupament
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Utilitza el token JWT de Firebase per autenticació
+
+  schemas:
+    Issue:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID únic de l'issue
+        title:
+          type: string
+          description: Títol de l'issue
+        description:
+          type: string
+          description: Descripció detallada de l'issue
+        type:
+          type: string
+          enum: [bug, feature, task]
+          description: Tipus d'issue
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+          description: Severitat de l'issue
+        priority:
+          type: string
+          enum: [low, medium, high]
+          description: Prioritat de l'issue
+        status:
+          type: string
+          enum: [open, in_progress, resolved, closed]
+          description: Estat actual de l'issue
+        createdAt:
+          type: string
+          format: date-time
+          description: Data de creació
+        updatedAt:
+          type: string
+          format: date-time
+          description: Data d'última actualització
+        createdBy:
+          type: string
+          description: ID de l'usuari que va crear l'issue
+
+    Comment:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID únic del comentari
+        issueId:
+          type: string
+          description: ID de l'issue associada
+        content:
+          type: string
+          description: Contingut del comentari
+        createdAt:
+          type: string
+          format: date-time
+          description: Data de creació
+        createdBy:
+          type: string
+          description: ID de l'usuari que va crear el comentari
+
+    Attachment:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID únic de l'attachment
+        issueId:
+          type: string
+          description: ID de l'issue associada
+        filename:
+          type: string
+          description: Nom de l'arxiu
+        contentType:
+          type: string
+          description: Tipus MIME de l'arxiu
+        size:
+          type: integer
+          description: Mida de l'arxiu en bytes
+        url:
+          type: string
+          description: URL per descarregar l'arxiu
+        createdAt:
+          type: string
+          format: date-time
+          description: Data de creació
+        createdBy:
+          type: string
+          description: ID de l'usuari que va pujar l'arxiu
+
+security:
+  - BearerAuth: []
+
+paths:
+  /issues:
+    get:
+      summary: Llistar issues
+      description: Retorna una llista d'issues amb opcions de filtrat i ordenació
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [bug, feature, task]
+          description: Filtrar per tipus d'issue
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [open, in_progress, resolved, closed]
+          description: Filtrar per estat
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [createdAt, updatedAt, priority]
+          description: Camp per ordenar
+        - name: order
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          description: Ordre d'ordenació
+      responses:
+        '200':
+          description: Llista d'issues
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Issue'
+        '401':
+          description: No autoritzat
+        '500':
+          description: Error del servidor
+
+    post:
+      summary: Crear una nova issue
+      description: Crea una nova issue amb les dades proporcionades
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Issue'
+              required:
+                - title
+                - description
+                - type
+                - severity
+                - priority
+      responses:
+        '201':
+          description: Issue creada correctament
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Issue'
+        '400':
+          description: Dades invàlides
+        '401':
+          description: No autoritzat
+        '500':
+          description: Error del servidor
+
+  /issues/{issueId}:
+    parameters:
+      - name: issueId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: ID de l'issue
+
+    get:
+      summary: Obtenir una issue
+      description: Retorna els detalls d'una issue específica
+      responses:
+        '200':
+          description: Detalls de l'issue
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Issue'
+        '404':
+          description: Issue no trobada
+        '401':
+          description: No autoritzat
+        '500':
+          description: Error del servidor
+
+    put:
+      summary: Actualitzar una issue
+      description: Actualitza els detalls d'una issue existent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Issue'
+      responses:
+        '200':
+          description: Issue actualitzada correctament
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Issue'
+        '400':
+          description: Dades invàlides
+        '401':
+          description: No autoritzat
+        '404':
+          description: Issue no trobada
+        '500':
+          description: Error del servidor
+
+    delete:
+      summary: Esborrar una issue
+      description: Esborra una issue existent
+      responses:
+        '204':
+          description: Issue esborrada correctament
+        '401':
+          description: No autoritzat
+        '404':
+          description: Issue no trobada
+        '500':
+          description: Error del servidor
+
+  /issues/{issueId}/comments:
+    parameters:
+      - name: issueId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: ID de l'issue
+
+    get:
+      summary: Llistar comentaris d'una issue
+      description: Retorna tots els comentaris d'una issue específica
+      responses:
+        '200':
+          description: Llista de comentaris
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Comment'
+        '401':
+          description: No autoritzat
+        '404':
+          description: Issue no trobada
+        '500':
+          description: Error del servidor
+
+    post:
+      summary: Afegir un comentari
+      description: Afegeix un nou comentari a una issue
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - content
+              properties:
+                content:
+                  type: string
+                  description: Contingut del comentari
+      responses:
+        '201':
+          description: Comentari creat correctament
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '400':
+          description: Dades invàlides
+        '401':
+          description: No autoritzat
+        '404':
+          description: Issue no trobada
+        '500':
+          description: Error del servidor
+
+  /issues/{issueId}/attachments:
+    parameters:
+      - name: issueId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: ID de l'issue
+
+    get:
+      summary: Llistar attachments d'una issue
+      description: Retorna tots els attachments d'una issue específica
+      responses:
+        '200':
+          description: Llista d'attachments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Attachment'
+        '401':
+          description: No autoritzat
+        '404':
+          description: Issue no trobada
+        '500':
+          description: Error del servidor
+
+    post:
+      summary: Afegir un attachment
+      description: Afegeix un nou attachment a una issue
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Arxiu a pujar
+      responses:
+        '201':
+          description: Attachment creat correctament
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attachment'
+        '400':
+          description: Dades invàlides
+        '401':
+          description: No autoritzat
+        '404':
+          description: Issue no trobada
+        '500':
+          description: Error del servidor
+
+  /issues/{issueId}/attachments/{attachmentId}:
+    parameters:
+      - name: issueId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: ID de l'issue
+      - name: attachmentId
+        in: path
+        required: true
+        schema:
+          type: string
+        description: ID de l'attachment
+
+    delete:
+      summary: Esborrar un attachment
+      description: Esborra un attachment específic d'una issue
+      responses:
+        '204':
+          description: Attachment esborrat correctament
+        '401':
+          description: No autoritzat
+        '404':
+          description: Attachment no trobat
+        '500':
+          description: Error del servidor 

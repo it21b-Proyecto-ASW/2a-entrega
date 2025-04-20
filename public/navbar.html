@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issue Tracker</title>
+    <!-- Firebase App -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <!-- Firebase Auth -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        .header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            margin: 0;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-info img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+        }
+
+        .navbar {
+            background-color: #2c3e50;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .navbar-brand a {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .navbar-menu {
+            display: flex;
+            gap: 2rem;
+        }
+
+        .navbar-menu a {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+
+        .navbar-menu a:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+
+        .navbar-end {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        #user-info {
+            color: white;
+        }
+
+        .logout-button {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .logout-button:hover {
+            background-color: #c0392b;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>Issue Tracker</h1>
+        <div class="user-info">
+            <span id="userEmail"></span>
+            <img id="userPhoto" src="" alt="User photo">
+            <button class="logout-btn" id="logoutBtn">Tancar Sessió</button>
+        </div>
+    </header>
+
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="/index.html">Issue Tracker</a>
+        </div>
+        <div class="navbar-menu">
+            <a href="/issues.html">Issues</a>
+            <a href="/users.html">Usuaris</a>
+            <a href="/settings.html">Configuració</a>
+            <a href="/endpoints.html">API Endpoints</a>
+        </div>
+        <div class="navbar-end">
+            <div id="user-info"></div>
+            <button id="logout-button" class="logout-button">Tancar Sessió</button>
+        </div>
+    </nav>
+
+    <script>
+        // Configuració de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyBVd3DFu7HL6FKup1y0x711CKBsrZCKWcg",
+            authDomain: "issue-tracker-app-21.firebaseapp.com",
+            projectId: "issue-tracker-app-21",
+            storageBucket: "issue-tracker-app-21.appspot.com",
+            messagingSenderId: "582952539766",
+            appId: "1:582952539766:web:59a2534f4914e394c7f157"
+        };
+
+        // Inicialitzar Firebase
+        let app;
+        let auth;
+        
+        async function initializeFirebase() {
+            try {
+                if (!app) {
+                    app = firebase.initializeApp(firebaseConfig);
+                }
+
+                if (!auth) {
+                    auth = firebase.auth();
+                }
+
+                // Esperar a que l'autenticació estigui llesta
+                const user = await new Promise((resolve, reject) => {
+                    const authTimeout = setTimeout(() => {
+                        reject(new Error('Timeout esperant autenticació'));
+                    }, 10000);
+
+                    const unsubscribe = auth.onAuthStateChanged(user => {
+                        clearTimeout(authTimeout);
+                        unsubscribe();
+                        resolve(user);
+                    });
+                });
+
+                if (!user) {
+                    window.location.href = '/index.html';
+                    return;
+                }
+
+                // Mostrar informació de l'usuari
+                document.getElementById('user-info').textContent = user.email;
+                if (user.photoURL) {
+                    document.getElementById('userPhoto').src = user.photoURL;
+                }
+            } catch (error) {
+                console.error('Error inicialitzant Firebase:', error);
+                window.location.href = '/index.html';
+            }
+        }
+
+        // Tancar sessió
+        document.getElementById('logout-button').addEventListener('click', async () => {
+            try {
+                await auth.signOut();
+                window.location.href = '/index.html';
+            } catch (error) {
+                console.error('Error tancant sessió:', error);
+            }
+        });
+
+        // Inicialitzar quan es carrega la pàgina
+        window.addEventListener('load', initializeFirebase);
+    </script>
+</body>
+</html> 

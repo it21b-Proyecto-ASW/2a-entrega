@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issue Tracker API Documentation</title>
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --text-color: #2c3e50;
+            --background-color: #f8f9fa;
+            --border-color: #e0e0e0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--background-color);
+            margin: 0;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1, h2, h3 {
+            color: var(--primary-color);
+        }
+
+        .endpoint {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .method {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            color: white;
+            font-weight: bold;
+            margin-right: 1rem;
+        }
+
+        .get { background-color: #2ecc71; }
+        .post { background-color: #3498db; }
+        .put { background-color: #f39c12; }
+        .delete { background-color: #e74c3c; }
+
+        .url {
+            font-family: monospace;
+            background-color: #f8f9fa;
+            padding: 0.5rem;
+            border-radius: 4px;
+        }
+
+        .request-body, .response-body {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Issue Tracker API Documentation</h1>
+        
+        <h2>Base URL</h2>
+        <p>https://your-api-domain.com/api/v1</p>
+
+        <h2>Authentication</h2>
+        <p>All API requests require authentication using a Bearer token in the Authorization header:</p>
+        <pre>Authorization: Bearer your-token-here</pre>
+
+        <h2>Endpoints</h2>
+
+        <!-- Issues -->
+        <div class="endpoint">
+            <h3>Issues</h3>
+            
+            <h4>List Issues</h4>
+            <div class="method get">GET</div>
+            <span class="url">/issues</span>
+            <p>Query Parameters:</p>
+            <ul>
+                <li>status (string): Filter by status</li>
+                <li>priority (string): Filter by priority</li>
+                <li>assign_to (string): Filter by assigned user ID</li>
+                <li>created_by (string): Filter by creator ID</li>
+                <li>search (string): Search in title and description</li>
+                <li>sort_by (string): Field to sort by</li>
+                <li>order (string): asc or desc</li>
+            </ul>
+
+            <h4>Create Issue</h4>
+            <div class="method post">POST</div>
+            <span class="url">/issues</span>
+            <div class="request-body">
+{
+    "title": "Issue title",
+    "description": "Issue description",
+    "type": "bug",
+    "severity": "high",
+    "priority": "high",
+    "status": "open",
+    "deadline": "2024-03-01",
+    "assigned_to": ["user_id_1", "user_id_2"],
+    "watchers": ["user_id_3", "user_id_4"]
+}
+            </div>
+
+            <h4>Get Issue</h4>
+            <div class="method get">GET</div>
+            <span class="url">/issues/{id}</span>
+
+            <h4>Update Issue</h4>
+            <div class="method put">PUT</div>
+            <span class="url">/issues/{id}</span>
+            <div class="request-body">
+{
+    "title": "Updated title",
+    "description": "Updated description",
+    "type": "feature",
+    "severity": "medium",
+    "priority": "medium",
+    "status": "in_progress",
+    "deadline": "2024-03-15",
+    "assigned_to": ["user_id_1"],
+    "watchers": ["user_id_2"]
+}
+            </div>
+
+            <h4>Delete Issue</h4>
+            <div class="method delete">DELETE</div>
+            <span class="url">/issues/{id}</span>
+
+            <h4>Bulk Create Issues</h4>
+            <div class="method post">POST</div>
+            <span class="url">/issues/bulk</span>
+            <div class="request-body">
+[
+    {
+        "title": "Issue 1",
+        "description": "Description 1",
+        "type": "bug",
+        "severity": "high",
+        "priority": "high",
+        "status": "open"
+    },
+    {
+        "title": "Issue 2",
+        "description": "Description 2",
+        "type": "feature",
+        "severity": "medium",
+        "priority": "medium",
+        "status": "open"
+    }
+]
+            </div>
+        </div>
+
+        <!-- Attachments -->
+        <div class="endpoint">
+            <h3>Attachments</h3>
+            
+            <h4>Add Attachment</h4>
+            <div class="method post">POST</div>
+            <span class="url">/issues/{id}/attachments</span>
+            <p>Content-Type: multipart/form-data</p>
+            <p>Parameters:</p>
+            <ul>
+                <li>file (file): The file to upload</li>
+            </ul>
+
+            <h4>List Attachments</h4>
+            <div class="method get">GET</div>
+            <span class="url">/issues/{id}/attachments</span>
+
+            <h4>Delete Attachment</h4>
+            <div class="method delete">DELETE</div>
+            <span class="url">/issues/{id}/attachments/{attachment_id}</span>
+        </div>
+
+        <!-- Comments -->
+        <div class="endpoint">
+            <h3>Comments</h3>
+            
+            <h4>Add Comment</h4>
+            <div class="method post">POST</div>
+            <span class="url">/issues/{id}/comments</span>
+            <div class="request-body">
+{
+    "text": "Comment text"
+}
+            </div>
+
+            <h4>List Comments</h4>
+            <div class="method get">GET</div>
+            <span class="url">/issues/{id}/comments</span>
+        </div>
+
+        <!-- Settings -->
+        <div class="endpoint">
+            <h3>Settings</h3>
+            
+            <h4>Get Settings</h4>
+            <div class="method get">GET</div>
+            <span class="url">/settings</span>
+
+            <h4>Update Settings</h4>
+            <div class="method put">PUT</div>
+            <span class="url">/settings</span>
+            <div class="request-body">
+{
+    "statuses": ["open", "in_progress", "resolved", "closed"],
+    "priorities": ["low", "medium", "high"],
+    "types": ["bug", "feature", "task"],
+    "severities": ["low", "medium", "high", "critical"]
+}
+            </div>
+        </div>
+
+        <!-- Users -->
+        <div class="endpoint">
+            <h3>Users</h3>
+            
+            <h4>Get User Profile</h4>
+            <div class="method get">GET</div>
+            <span class="url">/users/{id}</span>
+
+            <h4>Update User Profile</h4>
+            <div class="method put">PUT</div>
+            <span class="url">/users/{id}</span>
+            <div class="request-body">
+{
+    "bio": "User bio",
+    "avatar": "base64_encoded_image"
+}
+            </div>
+
+            <h4>Get User Issues</h4>
+            <div class="method get">GET</div>
+            <span class="url">/users/{id}/issues</span>
+            <p>Query Parameters:</p>
+            <ul>
+                <li>type (string): assigned or watched</li>
+                <li>status (string): open or closed</li>
+                <li>sort_by (string): Field to sort by</li>
+                <li>order (string): asc or desc</li>
+            </ul>
+
+            <h4>Get User Comments</h4>
+            <div class="method get">GET</div>
+            <span class="url">/users/{id}/comments</span>
+        </div>
+    </div>
+</body>
+</html> 

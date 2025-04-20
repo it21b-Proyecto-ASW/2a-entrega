@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Endpoints - Issue Tracker</title>
+    <!-- Firebase App -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <!-- Firebase Auth -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <!-- API Implementation -->
+    <script src="/api.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 2rem;
+            background-color: #f8f9fa;
+            color: #2c3e50;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #3498db;
+            margin-bottom: 2rem;
+        }
+
+        .api-status {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .status-active {
+            background-color: #2ecc71;
+        }
+
+        .status-inactive {
+            background-color: #e74c3c;
+        }
+
+        .endpoint-tester {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .endpoint-tester h2 {
+            margin-bottom: 1rem;
+            color: #2c3e50;
+        }
+
+        .endpoint-tester select {
+            padding: 0.5rem;
+            margin-right: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .endpoint-tester button {
+            padding: 0.5rem 1rem;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .endpoint-tester button:hover {
+            background-color: #2980b9;
+        }
+
+        .response-area {
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div id="navbar-container"></div>
+    <div class="container">
+        <h1>API Endpoints</h1>
+        
+        <div class="api-status">
+            <h2>API Status</h2>
+            <p>
+                <span class="status-indicator status-active"></span>
+                API is running
+            </p>
+        </div>
+
+        <div class="endpoint-tester">
+            <h2>Provar Endpoints</h2>
+            <select id="endpoint-select">
+                <option value="list-issues">List Issues</option>
+                <option value="create-issue">Create Issue</option>
+                <option value="get-issue">Get Issue</option>
+                <option value="update-issue">Update Issue</option>
+                <option value="delete-issue">Delete Issue</option>
+                <option value="list-comments">List Comments</option>
+                <option value="add-comment">Add Comment</option>
+                <option value="list-attachments">List Attachments</option>
+                <option value="add-attachment">Add Attachment</option>
+                <option value="delete-attachment">Delete Attachment</option>
+            </select>
+            <button onclick="testEndpoint()">Provar</button>
+            <div class="response-area">
+                <pre id="response-output">Resposta apareixerà aquí...</pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuració de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyBVd3DFu7HL6FKup1y0x711CKBsrZCKWcg",
+            authDomain: "issue-tracker-app-21.firebaseapp.com",
+            projectId: "issue-tracker-app-21",
+            storageBucket: "issue-tracker-app-21.appspot.com",
+            messagingSenderId: "582952539766",
+            appId: "1:582952539766:web:59a2534f4914e394c7f157"
+        };
+
+        // Inicialitzar Firebase
+        let app;
+        let auth;
+        
+        async function initializeFirebase() {
+            try {
+                console.log('Inicialitzant Firebase...');
+                
+                if (!app) {
+                    app = firebase.initializeApp(firebaseConfig);
+                    console.log('App inicialitzada');
+                }
+
+                if (!auth) {
+                    auth = firebase.auth();
+                    console.log('Auth inicialitzat');
+                }
+
+                // Esperar a que l'autenticació estigui llesta
+                const user = await new Promise((resolve, reject) => {
+                    const authTimeout = setTimeout(() => {
+                        reject(new Error('Timeout esperant autenticació'));
+                    }, 10000);
+
+                    const unsubscribe = auth.onAuthStateChanged(user => {
+                        clearTimeout(authTimeout);
+                        unsubscribe();
+                        resolve(user);
+                    });
+                });
+
+                if (!user) {
+                    throw new Error('No hi ha usuari autenticat');
+                }
+
+                console.log('Firebase inicialitzat correctament');
+
+                // Actualitzar l'estat de l'API
+                const statusIndicator = document.querySelector('.status-indicator');
+                const statusText = document.querySelector('.api-status p');
+                
+                try {
+                    await API.issues.list();
+                    statusIndicator.className = 'status-indicator status-active';
+                    statusText.innerHTML = '<span class="status-indicator status-active"></span> API is running';
+                } catch (error) {
+                    statusIndicator.className = 'status-indicator status-inactive';
+                    statusText.innerHTML = '<span class="status-indicator status-inactive"></span> API is not responding';
+                }
+            } catch (error) {
+                console.error('Error inicialitzant Firebase:', error);
+                throw error;
+            }
+        }
+
+        // Funció per provar els endpoints
+        async function testEndpoint() {
+            const endpoint = document.getElementById('endpoint-select').value;
+            const output = document.getElementById('response-output');
+            
+            try {
+                let response;
+                switch (endpoint) {
+                    case 'list-issues':
+                        response = await API.issues.list();
+                        break;
+                    case 'create-issue':
+                        response = await API.issues.create({
+                            title: 'Test Issue',
+                            description: 'This is a test issue',
+                            type: 'bug',
+                            severity: 'low',
+                            priority: 'medium',
+                            status: 'open'
+                        });
+                        break;
+                    case 'get-issue':
+                        // Aquí necessitarem un ID d'issue vàlid
+                        response = { error: 'Necessites especificar un ID d\'issue' };
+                        break;
+                    case 'update-issue':
+                        // Aquí necessitarem un ID d'issue vàlid
+                        response = { error: 'Necessites especificar un ID d\'issue' };
+                        break;
+                    case 'delete-issue':
+                        // Aquí necessitarem un ID d'issue vàlid
+                        response = { error: 'Necessites especificar un ID d\'issue' };
+                        break;
+                    case 'list-comments':
+                        // Aquí necessitarem un ID d'issue vàlid
+                        response = { error: 'Necessites especificar un ID d\'issue' };
+                        break;
+                    case 'add-comment':
+                        // Aquí necessitarem un ID d'issue vàlid
+                        response = { error: 'Necessites especificar un ID d\'issue' };
+                        break;
+                    case 'list-attachments':
+                        // Aquí necessitarem un ID d'issue vàlid
+                        response = { error: 'Necessites especificar un ID d\'issue' };
+                        break;
+                    case 'add-attachment':
+                        // Aquí necessitarem un ID d'issue vàlid i un arxiu
+                        response = { error: 'Necessites especificar un ID d\'issue i seleccionar un arxiu' };
+                        break;
+                    case 'delete-attachment':
+                        // Aquí necessitarem un ID d'issue i un ID d'attachment vàlids
+                        response = { error: 'Necessites especificar un ID d\'issue i un ID d\'attachment' };
+                        break;
+                }
+                
+                output.textContent = JSON.stringify(response, null, 2);
+            } catch (error) {
+                output.textContent = `Error: ${error.message}`;
+            }
+        }
+
+        // Carregar la navbar
+        fetch('/navbar.html')
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('navbar-container').innerHTML = html;
+            })
+            .catch(error => console.error('Error carregant la navbar:', error));
+
+        // Inicialitzar quan es carrega la pàgina
+        window.addEventListener('load', async () => {
+            try {
+                await initializeFirebase();
+            } catch (error) {
+                console.error('Error inicialitzant l\'aplicació:', error);
+            }
+        });
+    </script>
+</body>
+</html> 
