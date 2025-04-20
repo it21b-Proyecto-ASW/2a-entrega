@@ -4,138 +4,249 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Usuaris - Issue Tracker</title>
+    <!-- Firebase App -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <!-- Firebase Auth -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <!-- Firebase Firestore -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
     <style>
-        .main-content {
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            color: #2c3e50;
+        }
+
+        .container {
             max-width: 1200px;
-            margin: 2rem auto;
-            padding: 0 1rem;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .users-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .users-header h1 {
+            color: #2c3e50;
+            margin: 0;
         }
 
         .users-list {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
         }
 
         .user-card {
-            display: flex;
-            align-items: center;
-            padding: 1rem;
-            border-bottom: 1px solid #eee;
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
         }
 
-        .user-card:last-child {
-            border-bottom: none;
+        .user-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .user-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
         }
 
         .user-avatar {
-            width: 48px;
-            height: 48px;
+            width: 80px;
+            height: 80px;
             border-radius: 50%;
-            margin-right: 1rem;
+            object-fit: cover;
+            background-color: #3498db;
         }
 
         .user-info {
             flex-grow: 1;
         }
 
-        .user-email {
-            font-weight: 500;
+        .user-name {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin: 0;
             color: #2c3e50;
         }
 
-        .user-role {
+        .user-email {
             color: #666;
+            margin: 0.25rem 0;
             font-size: 0.9rem;
         }
 
-        .user-actions {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .btn {
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            border: none;
-            cursor: pointer;
+        .user-bio {
+            color: #666;
+            margin: 0.5rem 0;
             font-size: 0.9rem;
+            line-height: 1.4;
         }
 
-        .btn-primary {
-            background-color: #3498db;
-            color: white;
+        .user-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
         }
 
-        .btn-danger {
-            background-color: #e74c3c;
-            color: white;
+        .stat-item {
+            text-align: center;
         }
 
-        .btn:hover {
-            opacity: 0.9;
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #3498db;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #666;
         }
     </style>
 </head>
 <body>
     <div id="navbar-container"></div>
-
-    <main class="main-content">
-        <div class="users-list">
-            <h2>Usuaris</h2>
-            <div id="usersContainer">
-                <!-- Aquí es mostraran els usuaris -->
-            </div>
+    <div class="container">
+        <div class="users-header">
+            <h1>Usuaris</h1>
         </div>
-    </main>
+
+        <div class="users-list" id="users-list">
+            <!-- Els usuaris es carregaran aquí dinàmicament -->
+        </div>
+    </div>
 
     <script>
-        // Carregar el navbar
-        fetch('/navbar.html')
-            .then(response => response.text())
-            .then(html => {
-                document.getElementById('navbar-container').innerHTML = html;
-            })
-            .catch(error => console.error('Error carregant navbar:', error));
+        // Configuració de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyBVd3DFu7HL6FKup1y0x711CKBsrZCKWcg",
+            authDomain: "issue-tracker-app-21.firebaseapp.com",
+            projectId: "issue-tracker-app-21",
+            storageBucket: "issue-tracker-app-21.appspot.com",
+            messagingSenderId: "582952539766",
+            appId: "1:582952539766:web:59a2534f4914e394c7f157"
+        };
+
+        // Inicialitzar Firebase
+        let app;
+        let auth;
+        let db;
+        
+        async function initializeFirebase() {
+            try {
+                if (!app) {
+                    app = firebase.initializeApp(firebaseConfig);
+                }
+
+                if (!auth) {
+                    auth = firebase.auth();
+                }
+
+                if (!db) {
+                    db = firebase.firestore();
+                }
+
+                // Esperar a que l'autenticació estigui llesta
+                const user = await new Promise((resolve, reject) => {
+                    const authTimeout = setTimeout(() => {
+                        reject(new Error('Timeout esperant autenticació'));
+                    }, 10000);
+
+                    const unsubscribe = auth.onAuthStateChanged(user => {
+                        clearTimeout(authTimeout);
+                        unsubscribe();
+                        resolve(user);
+                    });
+                });
+
+                if (!user) {
+                    window.location.href = '/index.html';
+                    return;
+                }
+
+                // Carregar usuaris
+                loadUsers();
+            } catch (error) {
+                console.error('Error inicialitzant Firebase:', error);
+                window.location.href = '/index.html';
+            }
+        }
 
         // Carregar usuaris
         async function loadUsers() {
             try {
-                const usersSnapshot = await firebase.firestore().collection('users').get();
-                const usersContainer = document.getElementById('usersContainer');
-                usersContainer.innerHTML = '';
-
-                if (usersSnapshot.empty) {
-                    usersContainer.innerHTML = '<p>No hi ha usuaris registrats</p>';
-                    return;
-                }
+                const usersSnapshot = await db.collection('profiles').get();
+                const usersList = document.getElementById('users-list');
+                usersList.innerHTML = '';
 
                 usersSnapshot.forEach(doc => {
                     const user = doc.data();
-                    const userCard = document.createElement('div');
-                    userCard.className = 'user-card';
-                    userCard.innerHTML = `
-                        <img src="${user.photoURL || 'https://via.placeholder.com/48'}" alt="Avatar" class="user-avatar">
-                        <div class="user-info">
-                            <div class="user-email">${user.email}</div>
-                            <div class="user-role">${user.role || 'Usuari'}</div>
-                        </div>
-                        <div class="user-actions">
-                            <button class="btn btn-primary" onclick="editUser('${doc.id}')">Editar</button>
-                            <button class="btn btn-danger" onclick="deleteUser('${doc.id}')">Eliminar</button>
-                        </div>
-                    `;
-                    usersContainer.appendChild(userCard);
+                    const userCard = createUserCard(user);
+                    usersList.appendChild(userCard);
                 });
             } catch (error) {
                 console.error('Error carregant usuaris:', error);
-                alert('Error carregant usuaris: ' + error.message);
             }
         }
 
-        // Carregar usuaris quan es carrega la pàgina
-        document.addEventListener('DOMContentLoaded', loadUsers);
+        // Crear card d'usuari
+        function createUserCard(user) {
+            const card = document.createElement('div');
+            card.className = 'user-card';
+            card.innerHTML = `
+                <div class="user-header">
+                    <img class="user-avatar" src="${user.avatarBase64 || '/images/default-avatar.png'}" alt="Avatar">
+                    <div class="user-info">
+                        <h3 class="user-name">${user.displayName || 'Usuari'}</h3>
+                        <p class="user-email">${user.email || 'Sense email'}</p>
+                        <p class="user-bio">${user.bio || 'Sense bio'}</p>
+                    </div>
+                </div>
+                <div class="user-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">${user.issuesCount || 0}</div>
+                        <div class="stat-label">Issues</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">${user.commentsCount || 0}</div>
+                        <div class="stat-label">Comentaris</div>
+                    </div>
+                </div>
+            `;
+            return card;
+        }
+
+        // Carregar la navbar
+        window.addEventListener('load', () => {
+            fetch('/navbar.html')
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('navbar-container').innerHTML = html;
+                    // Carregar els scripts de la navbar
+                    const script = document.createElement('script');
+                    script.src = '/navbar.js';
+                    document.body.appendChild(script);
+                })
+                .catch(error => console.error('Error carregant la navbar:', error));
+
+            // Inicialitzar Firebase
+            initializeFirebase();
+        });
     </script>
 </body>
 </html> 

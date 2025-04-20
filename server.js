@@ -7,7 +7,7 @@ require('dotenv').config();
 
 // Inicialitzar l'aplicació Express
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3001;
 
 // Configuració de Firebase Admin
 const serviceAccount = {
@@ -30,7 +30,17 @@ admin.initializeApp({
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static('public', {
+    setHeaders: (res, path) => {
+        if (path.endsWith('.css')) {
+            res.setHeader('Content-Type', 'text/css');
+        } else if (path.endsWith('.js')) {
+            res.setHeader('Content-Type', 'application/javascript');
+        } else if (path.endsWith('.html')) {
+            res.setHeader('Content-Type', 'text/html');
+        }
+    }
+}));
 
 // Configuració de Multer per a arxius
 const storage = multer.diskStorage({
@@ -277,6 +287,11 @@ app.delete('/api/issues/:issueId/attachments/:attachmentId', authenticateToken, 
         console.error('Error deleting attachment:', error);
         res.status(500).json({ error: 'Error deleting attachment' });
     }
+});
+
+// Ruta per a qualsevol altra petició
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Iniciar el servidor

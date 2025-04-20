@@ -8,11 +8,27 @@ const firebaseConfig = {
     appId: "1:582952539766:web:59a2534f4914e394c7f157"
 };
 
-// Inicialitzar Firebase
-let app;
-let auth;
+// Carregar la navbar
+document.addEventListener('DOMContentLoaded', () => {
+    const navbarContainer = document.getElementById('navbar-container');
+    if (!navbarContainer) return;
 
-async function initializeFirebase() {
+    fetch('/navbar.html')
+        .then(response => response.text())
+        .then(html => {
+            navbarContainer.innerHTML = html;
+            initializeNavbar();
+        })
+        .catch(error => console.error('Error carregant la navbar:', error));
+});
+
+// Inicialitzar la navbar
+function initializeNavbar() {
+    // Inicialitzar Firebase
+    let app;
+    let auth;
+    let db;
+
     try {
         if (!app) {
             app = firebase.initializeApp(firebaseConfig);
@@ -22,41 +38,43 @@ async function initializeFirebase() {
             auth = firebase.auth();
         }
 
-        // Esperar a que l'autenticació estigui llesta
-        const user = await new Promise((resolve, reject) => {
-            const authTimeout = setTimeout(() => {
-                reject(new Error('Timeout esperant autenticació'));
-            }, 10000);
-
-            const unsubscribe = auth.onAuthStateChanged(user => {
-                clearTimeout(authTimeout);
-                unsubscribe();
-                resolve(user);
-            });
-        });
-
-        if (!user) {
-            window.location.href = '/index.html';
-            return;
+        if (!db) {
+            db = firebase.firestore();
         }
 
-        // Mostrar informació de l'usuari
-        document.getElementById('user-info').textContent = user.email;
+        // Comprovar si l'usuari està autenticat
+        auth.onAuthStateChanged(user => {
+            const loginLink = document.getElementById('login-link');
+            const profileLink = document.getElementById('profile-link');
+            const logoutLink = document.getElementById('logout-link');
+
+            if (user) {
+                // Usuari autenticat
+                if (loginLink) loginLink.style.display = 'none';
+                if (profileLink) profileLink.style.display = 'block';
+                if (logoutLink) logoutLink.style.display = 'block';
+            } else {
+                // Usuari no autenticat
+                if (loginLink) loginLink.style.display = 'block';
+                if (profileLink) profileLink.style.display = 'none';
+                if (logoutLink) logoutLink.style.display = 'none';
+            }
+        });
+
+        // Configurar l'esdeveniment de logout
+        const logoutLink = document.getElementById('logout-link');
+        if (logoutLink) {
+            logoutLink.addEventListener('click', async (e) => {
+                e.preventDefault();
+                try {
+                    await auth.signOut();
+                    window.location.href = '/auth.html';
+                } catch (error) {
+                    console.error('Error en el logout:', error);
+                }
+            });
+        }
     } catch (error) {
         console.error('Error inicialitzant Firebase:', error);
-        window.location.href = '/index.html';
     }
-}
-
-// Tancar sessió
-document.getElementById('logout-button').addEventListener('click', async () => {
-    try {
-        await auth.signOut();
-        window.location.href = '/index.html';
-    } catch (error) {
-        console.error('Error tancant sessió:', error);
-    }
-});
-
-// Inicialitzar quan es carrega la pàgina
-window.addEventListener('load', initializeFirebase); 
+} 

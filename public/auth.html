@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autenticació - Issue Tracker</title>
+    <!-- Firebase App -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <!-- Firebase Auth -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            color: #2c3e50;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .auth-container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .auth-header h1 {
+            color: #2c3e50;
+            margin: 0 0 0.5rem 0;
+        }
+
+        .auth-header p {
+            color: #666;
+            margin: 0;
+        }
+
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .form-group label {
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .btn-secondary {
+            background-color: #95a5a6;
+            color: white;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .auth-switch {
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        .auth-switch a {
+            color: #3498db;
+            text-decoration: none;
+        }
+
+        .auth-switch a:hover {
+            text-decoration: underline;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            background-color: #fde8e8;
+            padding: 0.75rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .success-message {
+            color: #2ecc71;
+            background-color: #e8fdf0;
+            padding: 0.75rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-header">
+            <h1>Issue Tracker</h1>
+            <p>Gestiona els teus projectes de manera eficient</p>
+        </div>
+
+        <div id="error-message" class="error-message"></div>
+        <div id="success-message" class="success-message"></div>
+
+        <form id="login-form" class="auth-form">
+            <div class="form-group">
+                <label for="login-email">Correu electrònic</label>
+                <input type="email" id="login-email" required>
+            </div>
+            <div class="form-group">
+                <label for="login-password">Contrasenya</label>
+                <input type="password" id="login-password" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Iniciar Sessió</button>
+            <div class="auth-switch">
+                No tens compte? <a href="#" onclick="showRegisterForm()">Registra't</a>
+            </div>
+        </form>
+
+        <form id="register-form" class="auth-form" style="display: none;">
+            <div class="form-group">
+                <label for="register-name">Nom</label>
+                <input type="text" id="register-name" required>
+            </div>
+            <div class="form-group">
+                <label for="register-email">Correu electrònic</label>
+                <input type="email" id="register-email" required>
+            </div>
+            <div class="form-group">
+                <label for="register-password">Contrasenya</label>
+                <input type="password" id="register-password" required>
+            </div>
+            <div class="form-group">
+                <label for="register-confirm-password">Confirmar contrasenya</label>
+                <input type="password" id="register-confirm-password" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Registrar-se</button>
+            <div class="auth-switch">
+                Ja tens compte? <a href="#" onclick="showLoginForm()">Inicia sessió</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Configuració de Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyBVd3DFu7HL6FKup1y0x711CKBsrZCKWcg",
+            authDomain: "issue-tracker-app-21.firebaseapp.com",
+            projectId: "issue-tracker-app-21",
+            storageBucket: "issue-tracker-app-21.appspot.com",
+            messagingSenderId: "582952539766",
+            appId: "1:582952539766:web:59a2534f4914e394c7f157"
+        };
+
+        // Inicialitzar Firebase
+        let app;
+        let auth;
+        
+        async function initializeFirebase() {
+            try {
+                if (!app) {
+                    app = firebase.initializeApp(firebaseConfig);
+                }
+
+                if (!auth) {
+                    auth = firebase.auth();
+                }
+
+                // Comprovar si l'usuari ja està autenticat
+                auth.onAuthStateChanged(user => {
+                    if (user) {
+                        window.location.href = '/profile.html';
+                    }
+                });
+            } catch (error) {
+                console.error('Error inicialitzant Firebase:', error);
+                showError('Error inicialitzant l\'aplicació');
+            }
+        }
+
+        // Mostrar/amagar formularis
+        function showLoginForm() {
+            document.getElementById('login-form').style.display = 'flex';
+            document.getElementById('register-form').style.display = 'none';
+        }
+
+        function showRegisterForm() {
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('register-form').style.display = 'flex';
+        }
+
+        // Mostrar errors
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            document.getElementById('success-message').style.display = 'none';
+        }
+
+        // Mostrar missatges d'èxit
+        function showSuccess(message) {
+            const successDiv = document.getElementById('success-message');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+            document.getElementById('error-message').style.display = 'none';
+        }
+
+        // Iniciar sessió
+        async function login(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+                window.location.href = '/profile.html';
+            } catch (error) {
+                console.error('Error iniciant sessió:', error);
+                showError('Error iniciant sessió: ' + error.message);
+            }
+        }
+
+        // Registrar-se
+        async function register(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('register-name').value;
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            const confirmPassword = document.getElementById('register-confirm-password').value;
+
+            if (password !== confirmPassword) {
+                showError('Les contrasenyes no coincideixen');
+                return;
+            }
+
+            try {
+                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                await userCredential.user.updateProfile({
+                    displayName: name
+                });
+                showSuccess('Compte creat amb èxit! Redirigint...');
+                setTimeout(() => {
+                    window.location.href = '/profile.html';
+                }, 2000);
+            } catch (error) {
+                console.error('Error registrant-se:', error);
+                showError('Error registrant-se: ' + error.message);
+            }
+        }
+
+        // Configurar els formularis
+        window.addEventListener('load', () => {
+            initializeFirebase();
+            document.getElementById('login-form').addEventListener('submit', login);
+            document.getElementById('register-form').addEventListener('submit', register);
+        });
+    </script>
+</body>
+</html> 

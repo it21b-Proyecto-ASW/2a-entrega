@@ -152,6 +152,11 @@
             color: white;
         }
 
+        .view-button {
+            background-color: #2ecc71;
+            color: white;
+        }
+
         .badge {
             padding: 0.25rem 0.5rem;
             border-radius: 4px;
@@ -212,6 +217,65 @@
         .badge-closed {
             background-color: #95a5a6;
             color: white;
+        }
+
+        .comments-section {
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
+        }
+
+        .comments-list {
+            margin-top: 1rem;
+        }
+
+        .comment {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .comment-author {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .comment-date {
+            color: #666;
+            font-size: 0.8rem;
+        }
+
+        .comment-text {
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .add-comment {
+            margin-top: 1rem;
+        }
+
+        .comment-input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .comment-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
         }
     </style>
 </head>
@@ -426,6 +490,7 @@
                 <div class="issue-description">${issue.description}</div>
                 <div class="issue-footer">
                     <div class="issue-actions">
+                        <button class="action-button view-button" onclick="viewIssue('${id}')">Veure detall</button>
                         <button class="action-button edit-button" onclick="editIssue('${id}')">Editar</button>
                         <button class="action-button delete-button" onclick="deleteIssue('${id}')">Eliminar</button>
                     </div>
@@ -473,9 +538,268 @@
         }
 
         // Editar issue
-        function editIssue(id) {
-            // Implementar edició d'issue
-            console.log('Editar issue:', id);
+        async function editIssue(id) {
+            try {
+                // Obtenir l'issue actual
+                const issueDoc = await db.collection('issues').doc(id).get();
+                if (!issueDoc.exists) {
+                    showError('Issue no trobada');
+                    return;
+                }
+
+                const issue = issueDoc.data();
+                
+                // Crear el formulari d'edició
+                const editForm = document.createElement('div');
+                editForm.className = 'edit-form';
+                editForm.innerHTML = `
+                    <h2>Editar Issue</h2>
+                    <div class="form-group">
+                        <label for="edit-title">Títol:</label>
+                        <input type="text" id="edit-title" value="${issue.title}" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-description">Descripció:</label>
+                        <textarea id="edit-description" class="form-control">${issue.description}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-type">Tipus:</label>
+                        <select id="edit-type" class="form-control">
+                            <option value="bug" ${issue.type === 'bug' ? 'selected' : ''}>Bug</option>
+                            <option value="feature" ${issue.type === 'feature' ? 'selected' : ''}>Feature</option>
+                            <option value="task" ${issue.type === 'task' ? 'selected' : ''}>Task</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-severity">Severitat:</label>
+                        <select id="edit-severity" class="form-control">
+                            <option value="low" ${issue.severity === 'low' ? 'selected' : ''}>Baixa</option>
+                            <option value="medium" ${issue.severity === 'medium' ? 'selected' : ''}>Mitjana</option>
+                            <option value="high" ${issue.severity === 'high' ? 'selected' : ''}>Alta</option>
+                            <option value="critical" ${issue.severity === 'critical' ? 'selected' : ''}>Crítica</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-status">Estat:</label>
+                        <select id="edit-status" class="form-control">
+                            <option value="open" ${issue.status === 'open' ? 'selected' : ''}>Obert</option>
+                            <option value="in_progress" ${issue.status === 'in_progress' ? 'selected' : ''}>En Progrés</option>
+                            <option value="resolved" ${issue.status === 'resolved' ? 'selected' : ''}>Resolt</option>
+                            <option value="closed" ${issue.status === 'closed' ? 'selected' : ''}>Tancat</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-primary" onclick="saveEdit('${id}')">Guardar</button>
+                        <button class="btn btn-secondary" onclick="cancelEdit()">Cancel·lar</button>
+                    </div>
+                `;
+
+                // Afegir estils al formulari
+                const style = document.createElement('style');
+                style.textContent = `
+                    .edit-form {
+                        position: fixed;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        background: white;
+                        padding: 2rem;
+                        border-radius: 8px;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                        z-index: 1000;
+                        max-width: 500px;
+                        width: 90%;
+                    }
+                    .form-group {
+                        margin-bottom: 1rem;
+                    }
+                    .form-group label {
+                        display: block;
+                        margin-bottom: 0.5rem;
+                    }
+                    .form-control {
+                        width: 100%;
+                        padding: 0.5rem;
+                        border: 1px solid #ddd;
+                        border-radius: 4px;
+                    }
+                    .form-actions {
+                        display: flex;
+                        gap: 1rem;
+                        margin-top: 1rem;
+                    }
+                    .btn {
+                        padding: 0.5rem 1rem;
+                        border: none;
+                        border-radius: 4px;
+                        cursor: pointer;
+                    }
+                    .btn-primary {
+                        background-color: #3498db;
+                        color: white;
+                    }
+                    .btn-secondary {
+                        background-color: #95a5a6;
+                        color: white;
+                    }
+                `;
+                document.head.appendChild(style);
+
+                // Afegir el formulari al document
+                document.body.appendChild(editForm);
+            } catch (error) {
+                console.error('Error editant issue:', error);
+                showError('Error editant issue: ' + error.message);
+            }
+        }
+
+        // Guardar edició
+        async function saveEdit(id) {
+            try {
+                const title = document.getElementById('edit-title').value;
+                const description = document.getElementById('edit-description').value;
+                const type = document.getElementById('edit-type').value;
+                const severity = document.getElementById('edit-severity').value;
+                const status = document.getElementById('edit-status').value;
+
+                await db.collection('issues').doc(id).update({
+                    title,
+                    description,
+                    type,
+                    severity,
+                    status,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                // Eliminar el formulari
+                const editForm = document.querySelector('.edit-form');
+                if (editForm) {
+                    editForm.remove();
+                }
+
+                // Recarregar les issues
+                loadIssues();
+                showSuccess('Issue actualitzada amb èxit!');
+            } catch (error) {
+                console.error('Error guardant edició:', error);
+                showError('Error guardant edició: ' + error.message);
+            }
+        }
+
+        // Cancel·lar edició
+        function cancelEdit() {
+            const editForm = document.querySelector('.edit-form');
+            if (editForm) {
+                editForm.remove();
+            }
+        }
+
+        // Veure detall de l'issue
+        async function viewIssue(id) {
+            try {
+                const issueDoc = await db.collection('issues').doc(id).get();
+                if (!issueDoc.exists) {
+                    showError('Issue no trobada');
+                    return;
+                }
+
+                const issue = issueDoc.data();
+                
+                // Obtenir els comentaris
+                const commentsSnapshot = await db.collection('issues').doc(id).collection('comments').get();
+                const comments = [];
+                commentsSnapshot.forEach(doc => {
+                    comments.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                // Crear el modal de detall
+                const detailModal = document.createElement('div');
+                detailModal.className = 'detail-modal';
+                detailModal.innerHTML = `
+                    <h2>${issue.title}</h2>
+                    <div class="issue-meta">
+                        <span class="badge badge-${issue.type}">${issue.type}</span>
+                        <span class="badge badge-${issue.severity}">${issue.severity}</span>
+                        <span class="badge badge-${issue.status}">${issue.status}</span>
+                    </div>
+                    <div class="issue-description">
+                        <h3>Descripció</h3>
+                        <p>${issue.description}</p>
+                    </div>
+                    <div class="issue-dates">
+                        <p>Creat: ${new Date(issue.createdAt).toLocaleString()}</p>
+                        ${issue.updatedAt ? `<p>Actualitzat: ${new Date(issue.updatedAt).toLocaleString()}</p>` : ''}
+                    </div>
+                    <div class="comments-section">
+                        <h3>Comentaris</h3>
+                        <div class="comments-list" id="comments-list-${id}">
+                            ${comments.map(comment => `
+                                <div class="comment" id="comment-${comment.id}">
+                                    <div class="comment-header">
+                                        <span class="comment-author">${comment.authorName}</span>
+                                        <span class="comment-date">${new Date(comment.createdAt).toLocaleString()}</span>
+                                    </div>
+                                    <div class="comment-text">${comment.text}</div>
+                                    <div class="comment-actions">
+                                        <button class="btn btn-secondary" onclick="deleteComment('${id}', '${comment.id}')">Eliminar</button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="add-comment">
+                            <textarea class="comment-input" id="new-comment-${id}" placeholder="Afegeix un comentari..."></textarea>
+                            <div class="comment-actions">
+                                <button class="btn btn-primary" onclick="addComment('${id}')">Afegir Comentari</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-actions">
+                        <button class="btn btn-primary" onclick="closeDetailModal()">Tancar</button>
+                    </div>
+                `;
+
+                // Afegir estils al modal
+                const style = document.createElement('style');
+                style.textContent = `
+                    .detail-modal {
+                        position: fixed;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        background: white;
+                        padding: 2rem;
+                        border-radius: 8px;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                        z-index: 1000;
+                        max-width: 600px;
+                        width: 90%;
+                        max-height: 90vh;
+                        overflow-y: auto;
+                    }
+                    .modal-actions {
+                        margin-top: 1rem;
+                        text-align: right;
+                    }
+                `;
+                document.head.appendChild(style);
+
+                // Afegir el modal al document
+                document.body.appendChild(detailModal);
+            } catch (error) {
+                console.error('Error mostrant detall:', error);
+                showError('Error mostrant detall: ' + error.message);
+            }
+        }
+
+        // Tancar modal de detall
+        function closeDetailModal() {
+            const modal = document.querySelector('.detail-modal');
+            if (modal) {
+                modal.remove();
+            }
         }
 
         // Eliminar issue
@@ -485,6 +809,136 @@
                 loadIssues();
             } catch (error) {
                 console.error('Error eliminant issue:', error);
+            }
+        }
+
+        // Afegir comentari
+        async function addComment(issueId) {
+            try {
+                const user = auth.currentUser;
+                if (!user) {
+                    showError('Has d\'estar autenticat per afegir comentaris');
+                    return;
+                }
+
+                const commentText = document.getElementById(`new-comment-${issueId}`).value.trim();
+                if (!commentText) {
+                    showError('El comentari no pot estar buit');
+                    return;
+                }
+
+                // Obtenir el nom de l'usuari
+                const userProfile = await db.collection('profiles').doc(user.uid).get();
+                const userData = userProfile.data();
+
+                // Crear el comentari a la subcol·lecció de l'issue
+                const commentRef = await db.collection('issues').doc(issueId).collection('comments').add({
+                    text: commentText,
+                    authorId: user.uid,
+                    authorName: userData.displayName || user.email,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    issueId: issueId
+                });
+
+                // Crear el mateix comentari a la col·lecció global de comentaris
+                await db.collection('comments').add({
+                    text: commentText,
+                    authorId: user.uid,
+                    authorName: userData.displayName || user.email,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    issueId: issueId
+                });
+
+                // Incrementar el comptador de comentaris de l'usuari
+                await db.collection('profiles').doc(user.uid).update({
+                    commentsCount: firebase.firestore.FieldValue.increment(1)
+                });
+
+                // Netejar el camp de text
+                document.getElementById(`new-comment-${issueId}`).value = '';
+
+                // Actualitzar la llista de comentaris
+                const comment = {
+                    id: commentRef.id,
+                    text: commentText,
+                    authorName: userData.displayName || user.email,
+                    createdAt: new Date()
+                };
+
+                const commentsList = document.getElementById(`comments-list-${issueId}`);
+                const commentElement = document.createElement('div');
+                commentElement.className = 'comment';
+                commentElement.id = `comment-${comment.id}`;
+                commentElement.innerHTML = `
+                    <div class="comment-header">
+                        <span class="comment-author">${comment.authorName}</span>
+                        <span class="comment-date">${comment.createdAt.toLocaleString()}</span>
+                    </div>
+                    <div class="comment-text">${comment.text}</div>
+                    <div class="comment-actions">
+                        <button class="btn btn-secondary" onclick="deleteComment('${issueId}', '${comment.id}')">Eliminar</button>
+                    </div>
+                `;
+                commentsList.appendChild(commentElement);
+
+                showSuccess('Comentari afegit amb èxit!');
+            } catch (error) {
+                console.error('Error afegint comentari:', error);
+                showError('Error afegint comentari: ' + error.message);
+            }
+        }
+
+        // Eliminar comentari
+        async function deleteComment(issueId, commentId) {
+            try {
+                const user = auth.currentUser;
+                if (!user) {
+                    showError('Has d\'estar autenticat per eliminar comentaris');
+                    return;
+                }
+
+                // Verificar que l'usuari és l'autor del comentari
+                const commentDoc = await db.collection('issues').doc(issueId).collection('comments').doc(commentId).get();
+                if (!commentDoc.exists) {
+                    showError('Comentari no trobat');
+                    return;
+                }
+
+                const comment = commentDoc.data();
+                if (comment.authorId !== user.uid) {
+                    showError('Només pots eliminar els teus propis comentaris');
+                    return;
+                }
+
+                // Eliminar el comentari de la subcol·lecció
+                await db.collection('issues').doc(issueId).collection('comments').doc(commentId).delete();
+
+                // Eliminar el comentari de la col·lecció global
+                const globalCommentQuery = await db.collection('comments')
+                    .where('issueId', '==', issueId)
+                    .where('authorId', '==', user.uid)
+                    .where('createdAt', '==', comment.createdAt)
+                    .get();
+
+                if (!globalCommentQuery.empty) {
+                    await globalCommentQuery.docs[0].ref.delete();
+                }
+
+                // Decrementar el comptador de comentaris de l'usuari
+                await db.collection('profiles').doc(user.uid).update({
+                    commentsCount: firebase.firestore.FieldValue.increment(-1)
+                });
+
+                // Eliminar l'element del DOM
+                const commentElement = document.getElementById(`comment-${commentId}`);
+                if (commentElement) {
+                    commentElement.remove();
+                }
+
+                showSuccess('Comentari eliminat amb èxit!');
+            } catch (error) {
+                console.error('Error eliminant comentari:', error);
+                showError('Error eliminant comentari: ' + error.message);
             }
         }
 
