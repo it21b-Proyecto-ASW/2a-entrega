@@ -175,7 +175,7 @@
                 });
 
                 if (!user) {
-                    window.location.href = '/index.html';
+                    window.location.href = '/auth.html';
                     return;
                 }
 
@@ -237,10 +237,11 @@
                 .then(response => response.text())
                 .then(html => {
                     document.getElementById('navbar-container').innerHTML = html;
-                    // Carregar els scripts de la navbar
-                    const script = document.createElement('script');
-                    script.src = '/navbar.js';
-                    document.body.appendChild(script);
+                    // Executar l'script de la navbar
+                    const scripts = document.getElementById('navbar-container').getElementsByTagName('script');
+                    for (let script of scripts) {
+                        eval(script.innerHTML);
+                    }
                 })
                 .catch(error => console.error('Error carregant la navbar:', error));
 

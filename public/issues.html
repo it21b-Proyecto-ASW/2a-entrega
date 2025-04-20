@@ -63,34 +63,32 @@
 
         .filter-group {
             display: flex;
+            flex-direction: column;
             gap: 0.5rem;
-            align-items: center;
+        }
+
+        .filter-group label {
+            font-weight: 500;
         }
 
         .filter-group select {
             padding: 0.5rem;
             border: 1px solid #ddd;
             border-radius: 4px;
-            background-color: white;
-        }
-
-        .search-box {
-            flex-grow: 1;
-            padding: 0.5rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            min-width: 150px;
         }
 
         .issues-list {
             display: grid;
-            gap: 1rem;
+            gap: 1.5rem;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
         }
 
         .issue-card {
             background-color: white;
-            padding: 1.5rem;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 1.5rem;
             transition: transform 0.3s ease;
         }
 
@@ -99,34 +97,78 @@
         }
 
         .issue-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
             margin-bottom: 1rem;
         }
 
-        .issue-title {
-            font-size: 1.2rem;
-            font-weight: bold;
+        .issue-header h3 {
+            margin: 0 0 0.5rem 0;
             color: #2c3e50;
         }
 
         .issue-meta {
             display: flex;
-            gap: 1rem;
-            color: #666;
-            font-size: 0.9rem;
+            gap: 0.5rem;
+            flex-wrap: wrap;
         }
 
-        .issue-description {
-            color: #666;
+        .issue-type,
+        .issue-severity,
+        .issue-priority,
+        .issue-status {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .issue-type.bug { background-color: #e74c3c; color: white; }
+        .issue-type.feature { background-color: #2ecc71; color: white; }
+        .issue-type.task { background-color: #3498db; color: white; }
+
+        .issue-severity.low { background-color: #f1c40f; color: #2c3e50; }
+        .issue-severity.medium { background-color: #e67e22; color: white; }
+        .issue-severity.high { background-color: #e74c3c; color: white; }
+        .issue-severity.critical { background-color: #c0392b; color: white; }
+
+        .issue-priority.low { background-color: #f1c40f; color: #2c3e50; }
+        .issue-priority.medium { background-color: #e67e22; color: white; }
+        .issue-priority.high { background-color: #e74c3c; color: white; }
+
+        .issue-status.open { background-color: #3498db; color: white; }
+        .issue-status.in-progress { background-color: #f1c40f; color: #2c3e50; }
+        .issue-status.resolved { background-color: #2ecc71; color: white; }
+        .issue-status.closed { background-color: #95a5a6; color: white; }
+
+        .issue-body {
             margin-bottom: 1rem;
+        }
+
+        .issue-body p {
+            margin: 0;
+            color: #666;
+            line-height: 1.5;
         }
 
         .issue-footer {
             display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .issue-author {
+            display: flex;
             justify-content: space-between;
+            color: #666;
+            font-size: 0.875rem;
+        }
+
+        .issue-assignees,
+        .issue-watchers {
+            display: flex;
             align-items: center;
+            gap: 0.5rem;
+            color: #666;
+            font-size: 0.875rem;
         }
 
         .issue-actions {
@@ -134,148 +176,49 @@
             gap: 0.5rem;
         }
 
-        .action-button {
+        .btn {
             padding: 0.5rem 1rem;
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            font-size: 0.875rem;
             transition: background-color 0.3s ease;
         }
 
-        .edit-button {
+        .btn-primary {
             background-color: #3498db;
             color: white;
         }
 
-        .delete-button {
-            background-color: #e74c3c;
-            color: white;
-        }
-
-        .view-button {
-            background-color: #2ecc71;
-            color: white;
-        }
-
-        .badge {
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            font-weight: bold;
-        }
-
-        .badge-bug {
-            background-color: #e74c3c;
-            color: white;
-        }
-
-        .badge-feature {
-            background-color: #2ecc71;
-            color: white;
-        }
-
-        .badge-task {
-            background-color: #3498db;
-            color: white;
-        }
-
-        .badge-low {
+        .btn-secondary {
             background-color: #95a5a6;
             color: white;
         }
 
-        .badge-medium {
-            background-color: #f39c12;
-            color: white;
+        .btn:hover {
+            opacity: 0.9;
         }
 
-        .badge-high {
-            background-color: #e74c3c;
-            color: white;
-        }
-
-        .badge-critical {
-            background-color: #c0392b;
-            color: white;
-        }
-
-        .badge-open {
+        .success-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
             background-color: #2ecc71;
             color: white;
-        }
-
-        .badge-in-progress {
-            background-color: #3498db;
-            color: white;
-        }
-
-        .badge-resolved {
-            background-color: #f39c12;
-            color: white;
-        }
-
-        .badge-closed {
-            background-color: #95a5a6;
-            color: white;
-        }
-
-        .comments-section {
-            margin-top: 2rem;
-            padding-top: 1rem;
-            border-top: 1px solid #eee;
-        }
-
-        .comments-list {
-            margin-top: 1rem;
-        }
-
-        .comment {
-            background-color: #f8f9fa;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-        }
-
-        .comment-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.5rem;
-        }
-
-        .comment-author {
-            font-weight: bold;
-            color: #2c3e50;
-        }
-
-        .comment-date {
-            color: #666;
-            font-size: 0.8rem;
-        }
-
-        .comment-text {
-            color: #666;
-            line-height: 1.4;
-        }
-
-        .add-comment {
-            margin-top: 1rem;
-        }
-
-        .comment-input {
-            width: 100%;
-            padding: 0.5rem;
-            border: 1px solid #ddd;
+            padding: 10px 20px;
             border-radius: 4px;
-            margin-bottom: 0.5rem;
-            resize: vertical;
-            min-height: 100px;
+            z-index: 1000;
         }
 
-        .comment-actions {
-            display: flex;
-            gap: 0.5rem;
-            justify-content: flex-end;
+        .error-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #e74c3c;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 4px;
+            z-index: 1000;
         }
     </style>
 </head>
@@ -284,48 +227,60 @@
     <div class="container">
         <div class="issues-header">
             <h1>Issues</h1>
-            <button class="new-issue-button" onclick="showNewIssueForm()">Nova Issue</button>
+            <a href="new-issue.html" class="new-issue-button">Nova Issue</a>
         </div>
 
         <div class="filters">
-            <div class="filter-group">
-                <label for="type-filter">Tipus:</label>
+            <div class="search-box">
+                <input type="text" id="search-box" placeholder="Cercar issues..." oninput="filterIssues()">
+            </div>
+            <div class="filter-options">
                 <select id="type-filter" onchange="filterIssues()">
-                    <option value="">Tots</option>
+                    <option value="">Tots els tipus</option>
                     <option value="bug">Bug</option>
                     <option value="feature">Feature</option>
                     <option value="task">Task</option>
                 </select>
-            </div>
-            <div class="filter-group">
-                <label for="status-filter">Estat:</label>
                 <select id="status-filter" onchange="filterIssues()">
-                    <option value="">Tots</option>
+                    <option value="">Tots els estats</option>
                     <option value="open">Obert</option>
-                    <option value="in_progress">En Progrés</option>
+                    <option value="in-progress">En Progrés</option>
                     <option value="resolved">Resolt</option>
                     <option value="closed">Tancat</option>
                 </select>
-            </div>
-            <div class="filter-group">
-                <label for="severity-filter">Severitat:</label>
                 <select id="severity-filter" onchange="filterIssues()">
-                    <option value="">Tots</option>
+                    <option value="">Totes les severitats</option>
                     <option value="low">Baixa</option>
                     <option value="medium">Mitjana</option>
                     <option value="high">Alta</option>
                     <option value="critical">Crítica</option>
                 </select>
             </div>
-            <input type="text" class="search-box" id="search-box" placeholder="Cercar issues..." oninput="filterIssues()">
         </div>
 
         <div class="issues-list" id="issues-list">
-            <!-- Les issues es carregaran aquí dinàmicament -->
+            <!-- Les issues es carregaran aquí dinàriament -->
         </div>
     </div>
 
     <script>
+        // Funcions per mostrar missatges
+        function showSuccess(message) {
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success-message';
+            successDiv.textContent = message;
+            document.body.appendChild(successDiv);
+            setTimeout(() => successDiv.remove(), 3000);
+        }
+
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+            document.body.appendChild(errorDiv);
+            setTimeout(() => errorDiv.remove(), 3000);
+        }
+
         // Configuració de Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyBVd3DFu7HL6FKup1y0x711CKBsrZCKWcg",
@@ -409,53 +364,8 @@
                 console.error('Error creant issues d\'exemple:', error);
             }
         }
+
         
-        async function initializeFirebase() {
-            try {
-                if (!app) {
-                    app = firebase.initializeApp(firebaseConfig);
-                }
-
-                if (!auth) {
-                    auth = firebase.auth();
-                }
-
-                if (!db) {
-                    db = firebase.firestore();
-                }
-
-                if (!storage) {
-                    storage = firebase.storage();
-                }
-
-                // Esperar a que l'autenticació estigui llesta
-                const user = await new Promise((resolve, reject) => {
-                    const authTimeout = setTimeout(() => {
-                        reject(new Error('Timeout esperant autenticació'));
-                    }, 10000);
-
-                    const unsubscribe = auth.onAuthStateChanged(user => {
-                        clearTimeout(authTimeout);
-                        unsubscribe();
-                        resolve(user);
-                    });
-                });
-
-                if (!user) {
-                    window.location.href = '/index.html';
-                    return;
-                }
-
-                // Crear issues d'exemple
-                await createSampleIssues();
-                
-                // Carregar issues
-                loadIssues();
-            } catch (error) {
-                console.error('Error inicialitzant Firebase:', error);
-                window.location.href = '/index.html';
-            }
-        }
 
         // Carregar issues
         async function loadIssues() {
@@ -474,29 +384,46 @@
             }
         }
 
-        // Crear card d'issue
+        // Crear una card d'issue
         function createIssueCard(id, issue) {
             const card = document.createElement('div');
             card.className = 'issue-card';
-            card.innerHTML = `
+            card.id = `issue-${id}`;
+
+            // Crear el contingut de la card
+            const content = `
                 <div class="issue-header">
-                    <div class="issue-title">${issue.title}</div>
+                    <h3>${issue.title}</h3>
                     <div class="issue-meta">
-                        <span class="badge badge-${issue.type}">${issue.type}</span>
-                        <span class="badge badge-${issue.severity}">${issue.severity}</span>
-                        <span class="badge badge-${issue.status}">${issue.status}</span>
+                        <span class="issue-type ${issue.type}">${issue.type}</span>
+                        <span class="issue-severity ${issue.severity}">${issue.severity}</span>
+                        <span class="issue-priority ${issue.priority}">${issue.priority}</span>
+                        <span class="issue-status ${issue.status}">${issue.status}</span>
                     </div>
                 </div>
-                <div class="issue-description">${issue.description}</div>
+                <div class="issue-body">
+                    <p>${issue.description}</p>
+                </div>
                 <div class="issue-footer">
-                    <div class="issue-actions">
-                        <button class="action-button view-button" onclick="viewIssue('${id}')">Veure detall</button>
-                        <button class="action-button edit-button" onclick="editIssue('${id}')">Editar</button>
-                        <button class="action-button delete-button" onclick="deleteIssue('${id}')">Eliminar</button>
+                    <div class="issue-author">
+                        <span>Creat per: ${issue.authorName}</span>
+                        <span>${new Date(issue.createdAt?.toDate()).toLocaleString()}</span>
                     </div>
-                    <div class="issue-date">${new Date(issue.createdAt).toLocaleDateString()}</div>
+                    <div class="issue-assignees">
+                        <span>Assignats: ${issue.assignedTo?.length || 0}</span>
+                    </div>
+                    <div class="issue-watchers">
+                        <span>Watchers: ${issue.watchers?.length || 0}</span>
+                    </div>
+                    <div class="issue-actions">
+                        <button class="btn btn-primary" onclick="viewIssue('${id}')">Veure Detalls</button>
+                        <button class="btn btn-primary" onclick="editIssue('${id}')">Editar</button>
+                        <button class="btn btn-secondary" onclick="deleteIssue('${id}')">Eliminar</button>
+                    </div>
                 </div>
             `;
+
+            card.innerHTML = content;
             return card;
         }
 
@@ -509,16 +436,11 @@
 
             const issues = document.querySelectorAll('.issue-card');
             issues.forEach(issue => {
-                // Obtenir els valors dels distintius
-                const typeBadge = issue.querySelector('[class*="badge-"]:not([class*="badge-low"]):not([class*="badge-medium"]):not([class*="badge-high"]):not([class*="badge-critical"]):not([class*="badge-open"]):not([class*="badge-in-progress"]):not([class*="badge-resolved"]):not([class*="badge-closed"])');
-                const severityBadge = issue.querySelector('[class*="badge-low"],[class*="badge-medium"],[class*="badge-high"],[class*="badge-critical"]');
-                const statusBadge = issue.querySelector('[class*="badge-open"],[class*="badge-in-progress"],[class*="badge-resolved"],[class*="badge-closed"]');
-                
-                const type = typeBadge ? typeBadge.textContent : '';
-                const severity = severityBadge ? severityBadge.textContent : '';
-                const status = statusBadge ? statusBadge.textContent : '';
-                const title = issue.querySelector('.issue-title').textContent.toLowerCase();
-                const description = issue.querySelector('.issue-description').textContent.toLowerCase();
+                const title = issue.querySelector('h3').textContent.toLowerCase();
+                const description = issue.querySelector('.issue-body p').textContent.toLowerCase();
+                const type = issue.querySelector('.issue-type').textContent;
+                const severity = issue.querySelector('.issue-severity').textContent;
+                const status = issue.querySelector('.issue-status').textContent;
 
                 const typeMatch = !typeFilter || type === typeFilter;
                 const statusMatch = !statusFilter || status === statusFilter;
@@ -942,21 +864,25 @@
             }
         }
 
+        // Funció per navegar a la pàgina de nova issue
+        function navigateToNewIssue() {
+            console.log('Navegant a nova issue...');
+            window.location.href = 'new-issue.html';
+        }
+
         // Carregar la navbar
         window.addEventListener('load', () => {
-            fetch('/navbar.html')
+            fetch('navbar.html')
                 .then(response => response.text())
                 .then(html => {
                     document.getElementById('navbar-container').innerHTML = html;
-                    // Carregar els scripts de la navbar
-                    const script = document.createElement('script');
-                    script.src = '/navbar.js';
-                    document.body.appendChild(script);
+                    // Executar l'script de la navbar
+                    const scripts = document.getElementById('navbar-container').getElementsByTagName('script');
+                    for (let script of scripts) {
+                        eval(script.innerHTML);
+                    }
                 })
                 .catch(error => console.error('Error carregant la navbar:', error));
-
-            // Inicialitzar Firebase
-            initializeFirebase();
         });
     </script>
 </body>

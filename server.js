@@ -7,7 +7,7 @@ require('dotenv').config();
 
 // Inicialitzar l'aplicació Express
 const app = express();
-const port = process.env.PORT || 3001;
+const port = process.env.PORT || 3000;
 
 // Configuració de Firebase Admin
 const serviceAccount = {
@@ -290,8 +290,8 @@ app.delete('/api/issues/:issueId/attachments/:attachmentId', authenticateToken, 
 });
 
 // Ruta per a qualsevol altra petició
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'issues.html'));
 });
 
 // Iniciar el servidor

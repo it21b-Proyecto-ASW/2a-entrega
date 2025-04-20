@@ -129,6 +129,49 @@
             margin-bottom: 1rem;
             display: none;
         }
+
+        .social-login {
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-google {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            background-color: white;
+            color: #2c3e50;
+            border: 1px solid #ddd;
+            width: 100%;
+        }
+
+        .btn-google:hover {
+            background-color: #f8f9fa;
+        }
+
+        .btn-google img {
+            width: 18px;
+            height: 18px;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 1.5rem 0;
+            color: #666;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .divider span {
+            padding: 0 1rem;
+        }
     </style>
 </head>
 <body>
@@ -140,6 +183,17 @@
 
         <div id="error-message" class="error-message"></div>
         <div id="success-message" class="success-message"></div>
+
+        <div class="social-login">
+            <button id="googleSignIn" class="btn btn-google">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+                Iniciar sessió amb Google
+            </button>
+        </div>
+
+        <div class="divider">
+            <span>o</span>
+        </div>
 
         <form id="login-form" class="auth-form">
             <div class="form-group">
@@ -194,6 +248,7 @@
         // Inicialitzar Firebase
         let app;
         let auth;
+        let provider;
         
         async function initializeFirebase() {
             try {
@@ -205,15 +260,71 @@
                     auth = firebase.auth();
                 }
 
+                if (!provider) {
+                    provider = new firebase.auth.GoogleAuthProvider();
+                }
+
                 // Comprovar si l'usuari ja està autenticat
                 auth.onAuthStateChanged(user => {
                     if (user) {
                         window.location.href = '/profile.html';
                     }
                 });
+
+                // Configurar l'esdeveniment de login amb Google
+                document.getElementById('googleSignIn').addEventListener('click', async () => {
+                    try {
+                        const result = await auth.signInWithPopup(provider);
+                        // L'usuari ha iniciat sessió correctament
+                        window.location.href = '/issues.html';
+                    } catch (error) {
+                        console.error('Error en el login amb Google:', error);
+                        showError('Error en el login amb Google. Si us plau, torna-ho a provar.');
+                    }
+                });
+
+                // Configurar l'esdeveniment de login amb email/password
+                document.getElementById('login-form').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const email = document.getElementById('login-email').value;
+                    const password = document.getElementById('login-password').value;
+
+                    try {
+                        await auth.signInWithEmailAndPassword(email, password);
+                        window.location.href = '/issues.html';
+                    } catch (error) {
+                        console.error('Error en el login:', error);
+                        showError('Error en el login. Si us plau, verifica les teves credencials.');
+                    }
+                });
+
+                // Configurar l'esdeveniment de registre
+                document.getElementById('register-form').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const name = document.getElementById('register-name').value;
+                    const email = document.getElementById('register-email').value;
+                    const password = document.getElementById('register-password').value;
+                    const confirmPassword = document.getElementById('register-confirm-password').value;
+
+                    if (password !== confirmPassword) {
+                        showError('Les contrasenyes no coincideixen.');
+                        return;
+                    }
+
+                    try {
+                        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                        await userCredential.user.updateProfile({
+                            displayName: name
+                        });
+                        window.location.href = '/issues.html';
+                    } catch (error) {
+                        console.error('Error en el registre:', error);
+                        showError('Error en el registre. Si us plau, torna-ho a provar.');
+                    }
+                });
             } catch (error) {
                 console.error('Error inicialitzant Firebase:', error);
-                showError('Error inicialitzant l\'aplicació');
+                showError('Error inicialitzant l\'aplicació. Si us plau, actualitza la pàgina.');
             }
         }
 
@@ -244,57 +355,8 @@
             document.getElementById('error-message').style.display = 'none';
         }
 
-        // Iniciar sessió
-        async function login(event) {
-            event.preventDefault();
-            
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-
-            try {
-                await auth.signInWithEmailAndPassword(email, password);
-                window.location.href = '/profile.html';
-            } catch (error) {
-                console.error('Error iniciant sessió:', error);
-                showError('Error iniciant sessió: ' + error.message);
-            }
-        }
-
-        // Registrar-se
-        async function register(event) {
-            event.preventDefault();
-            
-            const name = document.getElementById('register-name').value;
-            const email = document.getElementById('register-email').value;
-            const password = document.getElementById('register-password').value;
-            const confirmPassword = document.getElementById('register-confirm-password').value;
-
-            if (password !== confirmPassword) {
-                showError('Les contrasenyes no coincideixen');
-                return;
-            }
-
-            try {
-                const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-                await userCredential.user.updateProfile({
-                    displayName: name
-                });
-                showSuccess('Compte creat amb èxit! Redirigint...');
-                setTimeout(() => {
-                    window.location.href = '/profile.html';
-                }, 2000);
-            } catch (error) {
-                console.error('Error registrant-se:', error);
-                showError('Error registrant-se: ' + error.message);
-            }
-        }
-
-        // Configurar els formularis
-        window.addEventListener('load', () => {
-            initializeFirebase();
-            document.getElementById('login-form').addEventListener('submit', login);
-            document.getElementById('register-form').addEventListener('submit', register);
-        });
+        // Inicialitzar quan es carrega la pàgina
+        window.addEventListener('load', initializeFirebase);
     </script>
 </body>
 </html> 
