@@ -2,7 +2,7 @@
 Autors:
   - Richard Pie
   - Marta Nuñez
-  - Marc Planes
+  - Marc Planas
   - Eric Herrero
 
 # Issue Tracker
