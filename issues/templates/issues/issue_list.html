@@ -1,29 +1,41 @@
-{% extends 'issues/base.html' %}
+{% extends 'base.html' %}
 
-{% block title %}Lista de Issues{% endblock %}
+{% block title %}Llista de Issues{% endblock %}
 
 {% block content %}
-<div class="card">
-    <h1>Issues</h1>
-    <a href="{% url 'new_issue' %}" class="button">Crear Nueva Issue</a>
+<div class="card" style="max-width: 1200px; margin: 2rem auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h1 style="margin: 0;">Llista de Issues</h1>
+        <a href="{% url 'new_issue' %}" class="button" style="background-color: #28a745;">Nou Issue</a>
+    </div>
     
     <div class="list-group">
         {% for issue in issues %}
-            <div class="list-group-item">
-                <h3><a href="{% url 'issue_view' issue.id %}">{{ issue.subject }}</a></h3>
-                <p>{{ issue.description|truncatewords:30 }}</p>
-                <div>
-                    <strong>Estado:</strong> {{ issue.estado|default:"No especificado" }}
-                    <strong>Tipo:</strong> {{ issue.tipo|default:"No especificado" }}
-                    <strong>Prioridad:</strong> {{ issue.prioridad|default:"No especificada" }}
+            <div class="list-group-item" style="padding: 1rem; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <h3 style="margin: 0 0 0.5rem 0;">
+                            <a href="{% url 'issue_view' issue.id %}" style="color: #007bff; text-decoration: none;">
+                                {{ issue.subject }}
+                            </a>
+                        </h3>
+                        <p style="margin: 0; color: #666;">{{ issue.description|truncatewords:30 }}</p>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <a href="{% url 'edit_issue' issue.id %}" class="button" style="background-color: #ffc107;">Editar</a>
+                        <a href="{% url 'delete_issue' issue.id %}" class="button" style="background-color: #dc3545;">Eliminar</a>
+                    </div>
                 </div>
-                <div style="margin-top: 10px;">
-                    <a href="{% url 'edit_issue' issue.id %}" class="button">Editar</a>
-                    <a href="{% url 'delete_issue' issue.id %}" class="button delete-button">Eliminar</a>
+                <div style="margin-top: 1rem; display: flex; gap: 1rem; color: #666;">
+                    <span><strong>Estat:</strong> {{ issue.estado|default:"No especificat" }}</span>
+                    <span><strong>Tipus:</strong> {{ issue.tipo|default:"No especificat" }}</span>
+                    <span><strong>Prioritat:</strong> {{ issue.prioridad|default:"No especificada" }}</span>
                 </div>
             </div>
         {% empty %}
-            <p>No hay issues disponibles.</p>
+            <div style="text-align: center; padding: 2rem; background-color: #f8f9fa; border-radius: 4px;">
+                <p style="margin: 0; color: #666;">No hi ha issues disponibles.</p>
+            </div>
         {% endfor %}
     </div>
 </div>

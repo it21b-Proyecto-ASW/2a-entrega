@@ -1,16 +1,17 @@
-{% extends 'issues/base.html' %}
+{% extends 'base.html' %}
+{% load widget_tweaks %}
 
-{% block title %}{% if issue %}Editar Issue{% else %}Nueva Issue{% endif %}{% endblock %}
+{% block title %}{% if issue %}Editar Issue{% else %}Nova Issue{% endif %}{% endblock %}
 
 {% block content %}
-<div class="card">
-    <h1>{% if issue %}Editar Issue{% else %}Nueva Issue{% endif %}</h1>
+<div class="card" style="max-width: 800px; margin: 2rem auto;">
+    <h1 style="color: #333; margin-bottom: 1.5rem;">{% if issue %}Editar Issue{% else %}Nova Issue{% endif %}</h1>
     
-    <form method="POST">
+    <form method="POST" style="display: grid; gap: 1.5rem;">
         {% csrf_token %}
         {% for field in form %}
             <div class="form-group">
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                <label for="{{ field.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">{{ field.label }}</label>
                 {{ field.errors }}
                 {% if field.field.widget.input_type == 'checkbox' %}
                     <div class="checkbox">
@@ -25,9 +26,9 @@
             </div>
         {% endfor %}
         
-        <div style="margin-top: 20px;">
-            <button type="submit" class="button">{% if issue %}Guardar Cambios{% else %}Crear Issue{% endif %}</button>
-            <a href="{% url 'issues' %}" class="button" style="background-color: #6c757d;">Cancelar</a>
+        <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #eee; display: flex; gap: 1rem; justify-content: flex-end;">
+            <button type="submit" class="button" style="background-color: #007bff;">{% if issue %}Guardar Canvis{% else %}Crear Issue{% endif %}</button>
+            <a href="{% url 'issues' %}" class="button" style="background-color: #6c757d;">Cancel·lar</a>
         </div>
     </form>
 </div>

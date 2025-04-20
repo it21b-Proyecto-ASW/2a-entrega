@@ -17,11 +17,11 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from issues.views import *
+from users.views import user_list
 from django.contrib.auth.views import LogoutView
 from django.conf import settings
 from django.conf.urls.static import static
 from django.shortcuts import redirect
-from django.contrib.auth.decorators import login_required
 from users.views import CustomLoginView
 
 def root_redirect_view(request):
@@ -44,6 +44,11 @@ urlpatterns = [
     path('accounts/', include('allauth.urls')),
 
     path('issues/', IssueListView.as_view(), name='issues'),
+    path('new/', IssueCreateView.as_view(), name='new'),
+    path('edit/', IssueUpdateView.as_view(), name='edit'),
+    path('users/', user_list, name='users'),
+    path('settings/', ConfiguracionView.as_view(), name='settings'),
+
     path('issues/<int:issue_id>/', issue_view, name='issue_view'),
     path('issues/new/', new_issue_view, name='new_issue'),
     path('issues/<int:issue_id>/edit/', edit_issue_view, name='edit_issue'),
@@ -53,7 +58,6 @@ urlpatterns = [
     path('comments/', CommentsListView.as_view(), name='comments'),
     path('comments/<int:comment_id>/delete/', delete_comment, name='delete_comment'),
 
-    path('settings/', ConfiguracionView.as_view(), name='configuracion'),
     path('settings/tipo/add/', add_tipo, name='add_tipo'),
     path('settings/tipo/delete/', delete_tipo, name='delete_tipo'),
     path('settings/estado/add/', add_estado, name='add_estado'),
@@ -62,8 +66,6 @@ urlpatterns = [
     path('settings/prioridad/delete/', delete_prioridad, name='delete_prioridad'),
     path('settings/severidad/add/', add_severidad, name='add_severidad'),
     path('settings/severidad/delete/', delete_severidad, name='delete_severidad'),
-
-    path('users/', include('users.urls')),
 ]
 
 if settings.DEBUG:

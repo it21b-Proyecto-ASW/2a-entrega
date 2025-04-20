@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}{{ issue.subject }}{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 800px; margin: 2rem auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <h1 style="color: #333; margin: 0;">{{ issue.subject }}</h1>
+        <div style="display: flex; gap: 0.5rem;">
+            <a href="{% url 'edit_issue' issue.id %}" class="button" style="background-color: #007bff;">Editar</a>
+            <a href="{% url 'issues' %}" class="button" style="background-color: #6c757d;">Tornar a la llista</a>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+        <div class="info-box">
+            <span class="label">Tipus</span>
+            <span class="value">{{ issue.tipo }}</span>
+        </div>
+        <div class="info-box">
+            <span class="label">Estat</span>
+            <span class="value">{{ issue.estado }}</span>
+        </div>
+        <div class="info-box">
+            <span class="label">Prioritat</span>
+            <span class="value">{{ issue.prioridad }}</span>
+        </div>
+        <div class="info-box">
+            <span class="label">Severitat</span>
+            <span class="value">{{ issue.severidad }}</span>
+        </div>
+    </div>
+
+    <div class="info-box" style="margin-bottom: 1.5rem;">
+        <span class="label">Descripció</span>
+        <p class="value" style="white-space: pre-wrap;">{{ issue.description }}</p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+        <div class="info-box">
+            <span class="label">Creat per</span>
+            <span class="value">{{ issue.user_created }}</span>
+        </div>
+        <div class="info-box">
+            <span class="label">Assignat a</span>
+            <span class="value">{{ issue.user_assigned|default:"No assignat" }}</span>
+        </div>
+        <div class="info-box">
+            <span class="label">Data límit</span>
+            <span class="value">{{ issue.deadline|date:"d/m/Y"|default:"No especificada" }}</span>
+        </div>
+    </div>
+
+    <div class="info-box" style="margin-bottom: 1.5rem;">
+        <span class="label">Observadors</span>
+        <div class="value">
+            {% for watcher in issue.watchers.all %}
+                <span class="badge" style="background-color: #6c757d; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; margin-right: 0.5rem;">
+                    {{ watcher.username }}
+                </span>
+            {% empty %}
+                <span>No hi ha observadors</span>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="info-box" style="margin-bottom: 1.5rem;">
+        <span class="label">Archivos Adjuntos</span>
+        <div class="value">
+            {% for file in issue.files.all %}
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <a href="{{ file.file.url }}" target="_blank" style="color: #007bff; text-decoration: none;">
+                        {{ file.file.name|slice:"7:" }}
+                    </a>
+                    <span style="color: #6c757d; font-size: 0.875rem;">({{ file.file.size|filesizeformat }})</span>
+                </div>
+            {% empty %}
+                <span>No hay archivos adjuntos</span>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="info-box" style="margin-bottom: 1.5rem;">
+        <span class="label">Comentarios</span>
+        <div class="value">
+            {% for comment in issue.comments.all %}
+                <div style="border-left: 3px solid #007bff; padding-left: 1rem; margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span style="font-weight: bold;">{{ comment.user }}</span>
+                        <span style="color: #6c757d; font-size: 0.875rem;">{{ comment.created_at }}</span>
+                    </div>
+                    <p style="margin: 0; white-space: pre-wrap;">{{ comment.text }}</p>
+                </div>
+            {% empty %}
+                <span>No hay comentarios</span>
+            {% endfor %}
+        </div>
+    </div>
+
+    <form method="POST" style="margin-top: 2rem;">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="{{ form.text.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Añadir Comentario</label>
+            {{ form.text.errors }}
+            {{ form.text|add_class:"form-control"|attr:"style:min-height:100px;" }}
+        </div>
+        <button type="submit" class="button" style="background-color: #007bff; margin-top: 1rem;">Añadir Comentario</button>
+    </form>
+</div>
+
+<style>
+    .info-box {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 4px;
+    }
+
+    .label {
+        display: block;
+        color: #6c757d;
+        font-size: 0.875rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .value {
+        color: #333;
+        font-size: 1rem;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        transition: border-color 0.2s ease;
+    }
+
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+        outline: none;
+    }
+
+    .errorlist {
+        color: #dc3545;
+        list-style: none;
+        padding: 0;
+        margin: 0.25rem 0;
+        font-size: 0.875rem;
+    }
+</style>
+{% endblock %} 

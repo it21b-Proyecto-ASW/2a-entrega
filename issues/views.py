@@ -1,59 +1,108 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.http import require_POST
-from django.views.generic import ListView, DetailView
-from .models import Issue, Comment, TipoIssue, EstadoIssue, PrioridadIssue, SeveridadIssue, Attachment
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from .models import Issue, Comment, TipoIssue, EstadoIssue, PrioridadIssue, SeveridadIssue, File
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login, authenticate
-from .forms import *
+from .forms import (
+    IssueForm, CommentForm, TipoIssueForm, EstadoIssueForm,
+    PrioridadIssueForm, SeveridadIssueForm
+)
 from django.contrib import messages
 from django.db.models import Q
 import operator
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from .forms import IssueFilterForm
+from rest_framework import viewsets, permissions
+from .serializers import (
+    IssueSerializer, CommentSerializer, TipoIssueSerializer,
+    EstadoIssueSerializer, PrioridadIssueSerializer, SeveridadIssueSerializer,
+    FileSerializer
+)
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter
+from django.urls import reverse_lazy
+from django.contrib.auth.mixins import LoginRequiredMixin
 
 
-class IssueListView(ListView):
+class IssueListView(LoginRequiredMixin, ListView):
     model = Issue
-    template_name = 'issue_list.html'
+    template_name = 'issues/issue_list.html'
     context_object_name = 'issues'
+    paginate_by = 10
 
     def get_queryset(self):
-        queryset = super().get_queryset()
-        self.form = IssueFilterForm(self.request.GET)
+        queryset = Issue.objects.all()
+        search = self.request.GET.get('search')
+        tipo = self.request.GET.get('tipo')
+        estado = self.request.GET.get('estado')
+        prioridad = self.request.GET.get('prioridad')
+        severidad = self.request.GET.get('severidad')
 
-        if self.form.is_valid():
-            data = self.form.cleaned_data
-            if data.get('search'):
-                query = data['search']
-                queryset = queryset.filter(
-                    Q(subject__icontains=query) |
-                    Q(description__icontains=query) |
-                    Q(severidad__nombre__icontains=query) |
-                    Q(prioridad__nombre__icontains=query) |
-                    Q(estado__nombre__icontains=query) |
-                    Q(tipo__nombre__icontains=query)
-                )
-            if data.get('tipo'):
-                queryset = queryset.filter(tipo=data['tipo'])
-            if data.get('estado'):
-                queryset = queryset.filter(estado=data['estado'])
-            if data.get('prioridad'):
-                queryset = queryset.filter(prioridad=data['prioridad'])
-            if data.get('severidad'):
-                queryset = queryset.filter(severidad=data['severidad'])
+        if search:
+            queryset = queryset.filter(subject__icontains=search) | queryset.filter(description__icontains=search)
+        if tipo:
+            queryset = queryset.filter(tipo_id=tipo)
+        if estado:
+            queryset = queryset.filter(estado_id=estado)
+        if prioridad:
+            queryset = queryset.filter(prioridad_id=prioridad)
+        if severidad:
+            queryset = queryset.filter(severidad_id=severidad)
 
-        return queryset
+        return queryset.order_by('-creation_date', '-last_modified')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['filter_form'] = self.form
+        context['tipos'] = TipoIssue.objects.all()
+        context['estados'] = EstadoIssue.objects.all()
+        context['prioridades'] = PrioridadIssue.objects.all()
+        context['severidades'] = SeveridadIssue.objects.all()
+        
+        active_filters = {}
+        if self.request.GET.get('tipo'):
+            active_filters['Type'] = TipoIssue.objects.get(id=self.request.GET.get('tipo')).nombre
+        if self.request.GET.get('estado'):
+            active_filters['State'] = EstadoIssue.objects.get(id=self.request.GET.get('estado')).nombre
+        if self.request.GET.get('prioridad'):
+            active_filters['Priority'] = PrioridadIssue.objects.get(id=self.request.GET.get('prioridad')).nombre
+        if self.request.GET.get('severidad'):
+            active_filters['Severity'] = SeveridadIssue.objects.get(id=self.request.GET.get('severidad')).nombre
+        
+        context['active_filters'] = active_filters
         return context
 
-class CommentsListView(ListView):
-    model = Comment
-    template_name = 'comments_list.html'
-    context_object_name = 'comments'
+class IssueDetailView(LoginRequiredMixin, DetailView):
+    model = Issue
+    template_name = 'issues/issue_detail.html'
+    context_object_name = 'issue'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['comment_form'] = CommentForm()
+        return context
+
+class IssueCreateView(LoginRequiredMixin, CreateView):
+    model = Issue
+    form_class = IssueForm
+    template_name = 'issues/issue_form.html'
+    success_url = reverse_lazy('issues')
+
+    def form_valid(self, form):
+        form.instance.created_by = self.request.user
+        return super().form_valid(form)
+
+class IssueUpdateView(LoginRequiredMixin, UpdateView):
+    model = Issue
+    form_class = IssueForm
+    template_name = 'issues/issue_form.html'
+    success_url = reverse_lazy('issues')
+
+class IssueDeleteView(LoginRequiredMixin, DeleteView):
+    model = Issue
+    template_name = 'issues/issue_confirm_delete.html'
+    success_url = reverse_lazy('issues')
 
 def issue_view(request, **kwargs):
     issue = Issue.objects.get(id=kwargs.get('issue_id'))
@@ -62,60 +111,33 @@ def issue_view(request, **kwargs):
 @login_required
 def new_issue_view(request):
     if request.method == 'POST':
-        form = New_issue_Form(request.POST, request.FILES)
-        attachment_form = AttachmentForm(request.POST, request.FILES)
-
-        if form.is_valid():
-            issue = form.save()
-
-            if attachment_form.is_valid() and 'file' in request.FILES:
-                attachment = attachment_form.save(commit=False)
-                attachment.issue = issue
-                attachment.save()
-
-            return redirect('issues')
-    else:
-        form = New_issue_Form()
-        attachment_form = AttachmentForm()
-
-    return render(request, 'new_issue.html', {
-        'form': form,
-        'attachment_form': attachment_form,
-    })
-
-def edit_issue_view(request, **kwargs):
-    issue = Issue.objects.get(id=kwargs.get('issue_id'))
-
-    if request.method == 'POST':
-        form = Edit_issue_Form(request.POST, request.FILES, instance=issue)
-        attachment_form = AttachmentForm(request.POST, request.FILES)
-
+        form = IssueForm(request.POST)
         if form.is_valid():
             issue = form.save(commit=False)
+            issue.created_by = request.user
             issue.save()
-            if form.cleaned_data.get('user_assigned') is not None:
-                issue.user_assigned.set(form.cleaned_data['user_assigned'])
-            else:
-                issue.user_assigned.clear()
+            return redirect('issues')
+    else:
+        form = IssueForm()
 
-            if form.cleaned_data.get('watchers') is not None:
-                issue.watchers.set(form.cleaned_data['watchers'])
-            else:
-                issue.watchers.clear()
+    return render(request, 'issues/new_issue.html', {
+        'form': form,
+    })
 
-            if attachment_form.is_valid() and 'file' in request.FILES:
-                attachment = attachment_form.save(commit=False)
-                attachment.issue = issue
-                attachment.save()
+@login_required
+def edit_issue_view(request, issue_id):
+    issue = get_object_or_404(Issue, id=issue_id)
 
+    if request.method == 'POST':
+        form = IssueForm(request.POST, instance=issue)
+        if form.is_valid():
+            issue = form.save()
             return redirect('issue_view', issue_id=issue.id)
     else:
-        form = Edit_issue_Form(instance=issue)
-        attachment_form = AttachmentForm()
+        form = IssueForm(instance=issue)
 
-    return render(request, 'edit_issue.html', {
+    return render(request, 'issues/edit_issue.html', {
         'form': form,
-        'attachment_form': attachment_form,
         'issue': issue,
     })
 
@@ -269,5 +291,73 @@ def delete_comment(request, **kwargs):
     comment = get_object_or_404(Comment, id=kwargs.get('comment_id'))
     comment.delete()
     return redirect('comments')
+
+@login_required
+@require_POST
+def upload_file(request, issue_id=None):
+    if 'file' not in request.FILES:
+        return JsonResponse({'error': 'No file provided'}, status=400)
+
+    uploaded_file = request.FILES['file']
+    issue = None
+    if issue_id:
+        try:
+            issue = Issue.objects.get(id=issue_id)
+        except Issue.DoesNotExist:
+            return JsonResponse({'error': 'Issue not found'}, status=404)
+
+    file_instance = File.objects.create(
+        name=uploaded_file.name,
+        file=uploaded_file,
+        user=request.user,
+        issue=issue
+    )
+
+    return JsonResponse({
+        'id': file_instance.id,
+        'name': file_instance.name,
+        'url': file_instance.get_file_url(),
+        'size': file_instance.get_file_size()
+    })
+
+class IssueViewSet(viewsets.ModelViewSet):
+    queryset = Issue.objects.all()
+    serializer_class = IssueSerializer
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ['tipo', 'estado', 'prioridad', 'severidad']
+    search_fields = ['subject', 'description']
+
+class CommentViewSet(viewsets.ModelViewSet):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer
+
+class TipoIssueViewSet(viewsets.ModelViewSet):
+    queryset = TipoIssue.objects.all()
+    serializer_class = TipoIssueSerializer
+
+class EstadoIssueViewSet(viewsets.ModelViewSet):
+    queryset = EstadoIssue.objects.all()
+    serializer_class = EstadoIssueSerializer
+
+class PrioridadIssueViewSet(viewsets.ModelViewSet):
+    queryset = PrioridadIssue.objects.all()
+    serializer_class = PrioridadIssueSerializer
+
+class SeveridadIssueViewSet(viewsets.ModelViewSet):
+    queryset = SeveridadIssue.objects.all()
+    serializer_class = SeveridadIssueSerializer
+
+class FileViewSet(viewsets.ModelViewSet):
+    queryset = File.objects.all()
+    serializer_class = FileSerializer
+
+class CommentsListView(LoginRequiredMixin, ListView):
+    model = Comment
+    template_name = 'comments_list.html'
+    context_object_name = 'comments'
+    ordering = ['-created_at']
+
+    def get_queryset(self):
+        return Comment.objects.all().order_by('-created_at')
 
 

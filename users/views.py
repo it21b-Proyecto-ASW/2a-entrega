@@ -3,86 +3,76 @@ from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth import login
 from django.contrib.auth.models import User
 from issues.models import Issue, Comment
-from .forms import ProfileAvatarForm
-from .models import Profile
+from .forms import ProfileAvatarForm, ProfileBioForm
+from .models import UserProfile
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
 from issues.forms import New_issue_Form
 from allauth.account.views import LoginView
+from django.core.files.storage import FileSystemStorage
 
+@login_required
 def user_list(request):
-    users = User.objects.filter(is_superuser=False)
+    users = User.objects.all()
     return render(request, 'users/user_list.html', {'users': users})
 
-
+@login_required
 def user_profile(request, user_id):
-    user_obj = get_object_or_404(User, pk=user_id)
-    profile = user_obj.profile
-    editing_bio = False
-    editing_avatar = False
+    user = get_object_or_404(User, id=user_id)
+    profile = user.userprofile
 
-    edit_param = request.GET.get('edit')
-    if edit_param == 'bio':
-        editing_bio = True
-    elif edit_param == 'avatar':
-        editing_avatar = True
+    # Get editing status from query parameters
+    editing_bio = request.GET.get('edit') == 'bio'
+    editing_avatar = request.GET.get('edit') == 'avatar'
 
     if request.method == 'POST':
-
-        if editing_bio:
-            profile.bio = request.POST.get('bio', '')
-            profile.save()
-            return redirect('user_profile', user_id=user_id)
-
         if editing_avatar:
             form = ProfileAvatarForm(request.POST, request.FILES, instance=profile)
             if form.is_valid():
                 form.save()
-            return redirect('user_profile', user_id=user_id)
+                return redirect('user_profile', user_id=user_id)
+        elif editing_bio:
+            form = ProfileBioForm(request.POST, instance=profile)
+            if form.is_valid():
+                form.save()
+                return redirect('user_profile', user_id=user_id)
 
-    if request.method == 'POST' and request.user.id == user_obj.id:
-        new_bio = request.POST.get("bio", "").strip()
-        if hasattr(user_obj, "profile"):
-            user_obj.profile.bio = new_bio
-            user_obj.profile.save()
-        return redirect("user_profile", user_id=user_id)
+    # Get user's issues and comments
+    open_issues = Issue.objects.filter(user_assigned=user).exclude(estado__es_cerrado=True)
+    watched_issues = Issue.objects.filter(watchers=user)
+    comments = Comment.objects.filter(author=user.username)
 
-    open_issues = Issue.objects.filter(user_assigned=user_obj).exclude(estado__es_cerrado=True)
-
-    sort_field = request.GET.get("sort")
-    valid_fields = ["tipo", "severidad", "id", "estado", "deadline", "last_modified"]
-    if sort_field in valid_fields:
+    # Sort issues if requested
+    sort_field = request.GET.get('sort')
+    if sort_field in ['tipo', 'severidad', 'id', 'estado', 'deadline', 'last_modified']:
         open_issues = open_issues.order_by(sort_field)
 
-
-    watched_issues = Issue.objects.filter(watchers=user_obj)
-
-    user_comments = Comment.objects.filter(
-        author=user_obj.username
-    )
-
-    editing_bio = request.GET.get("edit") == "bio"
+    # Initialize forms based on editing mode
+    if editing_avatar:
+        form = ProfileAvatarForm(instance=profile)
+    elif editing_bio:
+        form = ProfileBioForm(instance=profile)
+    else:
+        form = None
 
     context = {
-        'user': user_obj,
+        'profile_user': user,
+        'profile': profile,
         'open_issues': open_issues,
         'watched_issues': watched_issues,
-        'comments': user_comments,
+        'comments': comments,
         'editing_bio': editing_bio,
         'editing_avatar': editing_avatar,
+        'form': form,
     }
-
     return render(request, 'users/user_profile.html', context)
-
-
 
 class CustomLoginView(LoginView):
     template_name = "account/login.html"
 
 @login_required
 def edit_profile_view(request):
-
-    profile = request.user.profile
+    profile = request.user.userprofile
 
     if request.method == 'POST':
         form = ProfileAvatarForm(request.POST, request.FILES, instance=profile)

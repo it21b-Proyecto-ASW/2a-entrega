@@ -1,4 +1,4 @@
-{% extends 'issues/base.html' %}
+{% extends 'base.html' %}
 {% load widget_tweaks %}
 
 {% block title %}Nueva Issue{% endblock %}
@@ -59,9 +59,9 @@
         </div>
 
         <div class="form-group">
-            <label for="{{ form.users_assigned.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Usuarios Asignados</label>
-            {{ form.users_assigned.errors }}
-            {{ form.users_assigned|add_class:"form-control" }}
+            <label for="{{ form.user_assigned.id_for_label }}" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Usuarios Asignados</label>
+            {{ form.user_assigned.errors }}
+            {{ form.user_assigned|add_class:"form-control" }}
         </div>
 
         <div class="form-group">

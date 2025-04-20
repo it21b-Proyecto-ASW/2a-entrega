@@ -72,18 +72,6 @@ class Issue(models.Model):
         return self.subject
 
 
-
-class Attachment(models.Model):
-    """
-    Modelo de Attachment para asociar archivos a Issues.
-    """
-    issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name="attachments")
-    file = models.FileField(upload_to='issue_attachments/', blank=True, null=True)
-    uploaded_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Attachment for Issue #{self.issue.pk}"
-
 class Comment(models.Model):
     issue_id = models.ForeignKey(Issue, on_delete=models.CASCADE)
     author = models.CharField(max_length=100)
@@ -92,3 +80,25 @@ class Comment(models.Model):
 
     def __str__(self):
         return self.text
+
+
+class File(models.Model):
+    name = models.CharField(max_length=255)
+    file = models.FileField(upload_to='attachments/%Y/%m/%d/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    issue = models.ForeignKey(Issue, on_delete=models.CASCADE, related_name='attachments', null=True, blank=True)
+
+    def __str__(self):
+        return self.name
+
+    def get_file_url(self):
+        """Retorna l'URL del fitxer des de S3"""
+        return self.file.url
+
+    def get_file_size(self):
+        """Retorna la mida del fitxer en bytes"""
+        return self.file.size
+
+    class Meta:
+        ordering = ['-uploaded_at']

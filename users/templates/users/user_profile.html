@@ -1,37 +1,51 @@
 ﻿{% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Perfil de {{ user.username }}{% endblock %}
+{% block title %}Perfil de {{ profile_user.username }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h2>{{ user.first_name }} {{ user.last_name }} <small class="text-muted">(@{{ user.username }})</small></h2>
-    <p>Email: {{ user.email }}</p>
-
-    {% if editing_avatar %}
-    <form method="post" enctype="multipart/form-data" class="mb-3">
-        {% csrf_token %}
-        <input type="file" name="avatar" accept="image/*" required class="form-control mb-2">
-        <button type="submit" class="btn btn-primary">Guardar Avatar</button>
-    </form>
-    {% else %}
-    {% if user.profile.avatar %}
-    <img src="{{ user.profile.avatar.url }}" class="img-thumbnail mb-2" width="100">
-    {% else %}
-    <p>No avatar yet</p>
-    {% endif %}
-    <a href="?edit=avatar" class="btn btn-outline-secondary btn-sm mb-2">Editar Avatar</a>
-    {% endif %}
-
-    {% if editing_bio %}
-    <form method="post">
-        {% csrf_token %}
-        <textarea name="bio" class="form-control mb-2" rows="3">{{ user.profile.bio }}</textarea>
-        <button type="submit" class="btn btn-primary">Guardar BIO</button>
-    </form>
-    {% else %}
-    <p>{{ user.profile.bio }}</p>
-    <a href="?edit=bio" class="btn btn-outline-secondary btn-sm">Editar BIO</a>
-    {% endif %}
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    {% if editing_avatar %}
+                        <form method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            {{ form.as_p }}
+                            <button type="submit" class="btn btn-primary">Guardar Avatar</button>
+                            <a href="{% url 'user_profile' profile_user.id %}" class="btn btn-secondary">Cancelar</a>
+                        </form>
+                    {% else %}
+                        {% if profile.avatar %}
+                            <img src="{{ profile.avatar.url }}" alt="Avatar" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                        {% else %}
+                            <img src="{% static 'images/default-avatar.png' %}" alt="Avatar" class="img-fluid rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                        {% endif %}
+                        <a href="?edit=avatar" class="btn btn-outline-primary">Editar Avatar</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h2>{{ profile_user.username }}</h2>
+                    {% if editing_bio %}
+                        <form method="post">
+                            {% csrf_token %}
+                            {{ form.as_p }}
+                            <button type="submit" class="btn btn-primary">Guardar BIO</button>
+                            <a href="{% url 'user_profile' profile_user.id %}" class="btn btn-secondary">Cancelar</a>
+                        </form>
+                    {% else %}
+                        <p>{{ profile.bio|default:"No hay BIO disponible" }}</p>
+                        <a href="?edit=bio" class="btn btn-outline-primary">Editar BIO</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
 
     <hr>
 
